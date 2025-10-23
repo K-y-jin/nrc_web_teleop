@@ -1,0 +1,147 @@
+[0.088s] DEBUG:colcon:Command line arguments: ['/usr/bin/colcon', 'build', '--packages-select', 'nrc_web_teleop', '--symlink-install']
+[0.088s] DEBUG:colcon:Parsed command line arguments: Namespace(log_base=None, log_level=None, verb_name='build', build_base='build', install_base='install', merge_install=False, symlink_install=True, test_result_base=None, continue_on_error=False, executor='parallel', parallel_workers=16, event_handlers=None, ignore_user_meta=False, metas=['./colcon.meta'], base_paths=['.'], packages_ignore=None, packages_ignore_regex=None, paths=None, packages_up_to=None, packages_up_to_regex=None, packages_above=None, packages_above_and_dependencies=None, packages_above_depth=None, packages_select_by_dep=None, packages_skip_by_dep=None, packages_skip_up_to=None, packages_select_build_failed=False, packages_skip_build_finished=False, packages_select_test_failures=False, packages_skip_test_passed=False, packages_select=['nrc_web_teleop'], packages_skip=None, packages_select_regex=None, packages_skip_regex=None, packages_start=None, packages_end=None, allow_overriding=[], cmake_args=None, cmake_target=None, cmake_target_skip_unavailable=False, cmake_clean_cache=False, cmake_clean_first=False, cmake_force_configure=False, ament_cmake_args=None, catkin_cmake_args=None, catkin_skip_building_tests=False, mixin_files=None, mixin=None, verb_parser=<colcon_mixin.mixin.mixin_argument.MixinArgumentDecorator object at 0x72f789a304d0>, verb_extension=<colcon_core.verb.build.BuildVerb object at 0x72f789a301a0>, main=<bound method BuildVerb.main of <colcon_core.verb.build.BuildVerb object at 0x72f789a301a0>>, mixin_verb=('build',))
+[0.116s] ERROR:colcon.colcon_core.extension_point:Exception loading extension 'colcon_core.package_identification.python_setup_py': module 'pkgutil' has no attribute 'ImpImporter'
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/colcon_core/extension_point.py", line 169, in load_extension_points
+    extension_type = load_extension_point(name, value, group)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/colcon_core/extension_point.py", line 210, in load_extension_point
+    return EntryPoint(name, value, group).load()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/importlib/metadata/__init__.py", line 205, in load
+    module = import_module(match.group('module'))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/usr/lib/python3/dist-packages/colcon_python_setup_py/package_identification/python_setup_py.py", line 9, in <module>
+    import setuptools
+  File "/home/nrc/.local/lib/python3.12/site-packages/setuptools/__init__.py", line 16, in <module>
+    import setuptools.version
+  File "/home/nrc/.local/lib/python3.12/site-packages/setuptools/version.py", line 1, in <module>
+    import pkg_resources
+  File "/home/nrc/.local/lib/python3.12/site-packages/pkg_resources/__init__.py", line 2172, in <module>
+    register_finder(pkgutil.ImpImporter, find_on_path)
+                    ^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pkgutil' has no attribute 'ImpImporter'. Did you mean: 'zipimporter'?
+
+[0.119s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) check parameters
+[0.119s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) check parameters
+[0.119s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) check parameters
+[0.119s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) check parameters
+[0.119s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) discover
+[0.119s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) discover
+[0.119s] INFO:colcon.colcon_core.package_discovery:Crawling recursively for packages in '/home/nrc/stretch/nrc_web_teleop'
+[0.119s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ignore', 'ignore_ament_install']
+[0.119s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore'
+[0.119s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore_ament_install'
+[0.119s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_pkg']
+[0.119s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_pkg'
+[0.119s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_meta']
+[0.119s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_meta'
+[0.119s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ros']
+[0.119s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ros'
+[0.137s] DEBUG:colcon.colcon_core.package_identification:Package '.' with type 'ros.ament_cmake' and name 'nrc_web_teleop'
+[0.137s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) using defaults
+[0.137s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) discover
+[0.137s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) using defaults
+[0.137s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) discover
+[0.137s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) using defaults
+[0.137s] WARNING:colcon.colcon_core.package_selection:ignoring unknown package 'nrc_web_teleop' in --packages-select
+[0.153s] ERROR:colcon.colcon_core.extension_point:Exception loading extension 'colcon_core.package_augmentation.python_setup_py': module 'pkgutil' has no attribute 'ImpImporter'
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/colcon_core/extension_point.py", line 169, in load_extension_points
+    extension_type = load_extension_point(name, value, group)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/colcon_core/extension_point.py", line 210, in load_extension_point
+    return EntryPoint(name, value, group).load()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/importlib/metadata/__init__.py", line 205, in load
+    module = import_module(match.group('module'))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/usr/lib/python3/dist-packages/colcon_python_setup_py/package_augmentation/python_setup_py.py", line 9, in <module>
+    from colcon_python_setup_py.package_identification.python_setup_py import \
+  File "/usr/lib/python3/dist-packages/colcon_python_setup_py/package_identification/python_setup_py.py", line 9, in <module>
+    import setuptools
+  File "/home/nrc/.local/lib/python3.12/site-packages/setuptools/__init__.py", line 16, in <module>
+    import setuptools.version
+  File "/home/nrc/.local/lib/python3.12/site-packages/setuptools/version.py", line 1, in <module>
+    import pkg_resources
+  File "/home/nrc/.local/lib/python3.12/site-packages/pkg_resources/__init__.py", line 2172, in <module>
+    register_finder(pkgutil.ImpImporter, find_on_path)
+                    ^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pkgutil' has no attribute 'ImpImporter'. Did you mean: 'zipimporter'?
+
+[0.155s] ERROR:colcon.colcon_core.extension_point:Exception loading extension 'colcon_core.package_augmentation.ros_ament_python': module 'pkgutil' has no attribute 'ImpImporter'
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/colcon_core/extension_point.py", line 169, in load_extension_points
+    extension_type = load_extension_point(name, value, group)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/colcon_core/extension_point.py", line 210, in load_extension_point
+    return EntryPoint(name, value, group).load()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/importlib/metadata/__init__.py", line 205, in load
+    module = import_module(match.group('module'))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/usr/lib/python3/dist-packages/colcon_ros/package_augmentation/ros_ament_python.py", line 8, in <module>
+    from colcon_python_setup_py.package_identification.python_setup_py \
+  File "/usr/lib/python3/dist-packages/colcon_python_setup_py/package_identification/python_setup_py.py", line 9, in <module>
+    import setuptools
+  File "/home/nrc/.local/lib/python3.12/site-packages/setuptools/__init__.py", line 16, in <module>
+    import setuptools.version
+  File "/home/nrc/.local/lib/python3.12/site-packages/setuptools/version.py", line 1, in <module>
+    import pkg_resources
+  File "/home/nrc/.local/lib/python3.12/site-packages/pkg_resources/__init__.py", line 2172, in <module>
+    register_finder(pkgutil.ImpImporter, find_on_path)
+                    ^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'pkgutil' has no attribute 'ImpImporter'. Did you mean: 'zipimporter'?
+
+[0.155s] INFO:colcon.colcon_core.package_selection:Skipping not selected package 'nrc_web_teleop' in '.'
+[0.156s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) check parameters
+[0.156s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) discover
+[0.156s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) using defaults
+[0.157s] INFO:colcon.colcon_core.executor:Executing jobs using 'parallel' executor
+[0.158s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete
+[0.158s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:closing loop
+[0.158s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:loop closed
+[0.158s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete finished with '0'
+[0.158s] DEBUG:colcon.colcon_core.event_reactor:joining thread
+[0.161s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.terminal_notifier': Not used on non-Darwin systems
+[0.161s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.win32': Not used on non-Windows systems
+[0.161s] INFO:colcon.colcon_notification.desktop_notification:Sending desktop notification using 'notify2'
+[0.172s] DEBUG:colcon.colcon_core.event_reactor:joined thread
+[0.174s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_core.shell.bat': Not used on non-Windows systems
+[0.174s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/nrc/stretch/nrc_web_teleop/install/local_setup.ps1'
+[0.175s] INFO:colcon.colcon_core.shell:Creating prefix util module '/home/nrc/stretch/nrc_web_teleop/install/_local_setup_util_ps1.py'
+[0.178s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/nrc/stretch/nrc_web_teleop/install/setup.ps1'
+[0.178s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/nrc/stretch/nrc_web_teleop/install/local_setup.sh'
+[0.178s] INFO:colcon.colcon_core.shell:Creating prefix util module '/home/nrc/stretch/nrc_web_teleop/install/_local_setup_util_sh.py'
+[0.179s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/nrc/stretch/nrc_web_teleop/install/setup.sh'
+[0.179s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/nrc/stretch/nrc_web_teleop/install/local_setup.bash'
+[0.179s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/nrc/stretch/nrc_web_teleop/install/setup.bash'
+[0.180s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/nrc/stretch/nrc_web_teleop/install/local_setup.zsh'
+[0.180s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/nrc/stretch/nrc_web_teleop/install/setup.zsh'
