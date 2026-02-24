@@ -72,11 +72,8 @@ export const CameraView = (props: CustomizableComponentProps) => {
     >(null);
     const [isMovingBaseToPoint, setIsMovingBaseToPoint] =
         React.useState<boolean>(false);
-<<<<<<< HEAD
-=======
     const [isMovingGripperToPoint, setIsMovingGripperToPoint] =
         React.useState<boolean>(false);
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
     // The font size to use for the icon indicating the selected object
     const [selectObjectFontSize, setSelectObjectFontSize] =
         React.useState<string>("1.5em");
@@ -209,9 +206,6 @@ export const CameraView = (props: CustomizableComponentProps) => {
         }
         // [Move-base-to-point] If it is the Overhead, there is no overlay (e.g., button pad),
         else if (props.definition.id == CameraViewId.overhead && !overlay) {
-<<<<<<< HEAD
-            if (selectLocationScaledXY === null) {
-=======
             // Move to point goal Cancel
             if (isMovingBaseToPoint) {
                 underVideoFunctionProvider.provideFunctions(
@@ -227,14 +221,13 @@ export const CameraView = (props: CustomizableComponentProps) => {
                 setIsMovingGripperToPoint(false);
                 setSelectLocationScaledXY(null);
             } else {
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
                 let scaled_x = x / (right - left);
                 let scaled_y = y / (bottom - top);
                 setSelectLocationScaledXY([scaled_x, scaled_y]);
                 console.log("scaled x", scaled_x, "scaled y", scaled_y);
-            } else {
-                setSelectLocationScaledXY(null);
             }
+        } else {
+            setSelectLocationScaledXY(null);
         }
     }
 
@@ -401,15 +394,10 @@ export const CameraView = (props: CustomizableComponentProps) => {
                         setSelectLocationScaledXY={setSelectLocationScaledXY}
                         isMovingToPregrasp={isMovingToPregrasp}
                         setIsMovingToPregrasp={setIsMovingToPregrasp}
-<<<<<<< HEAD
-                        isMovingToPoint={isMovingToPoint}
-                        setIsMovingToPoint={setIsMovingToPoint}
-=======
                         isMovingBaseToPoint={isMovingBaseToPoint}
                         isMovingGripperToPoint={isMovingGripperToPoint}
                         setIsMovingBaseToPoint={setIsMovingBaseToPoint}
                         setIsMovingGripperToPoint={setIsMovingGripperToPoint}
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
                         isShowingTablet={isShowingTablet}
                         setIsShowingTablet={setIsShowingTablet}
                         underVideoAreaRef={underVideoAreaRef}
@@ -786,15 +774,10 @@ const UnderVideoButtons = (props: {
     setSelectLocationScaledXY: (scaledXY: [number, number] | null) => void;
     isMovingToPregrasp: boolean;
     setIsMovingToPregrasp: (isMoving: boolean) => void;
-<<<<<<< HEAD
-    isMovingToPoint: boolean;
-    setIsMovingToPoint: (isMoving: boolean) => void;
-=======
     isMovingBaseToPoint: boolean;
     isMovingGripperToPoint: boolean;
     setIsMovingBaseToPoint: (isMoving: boolean) => void;
     setIsMovingGripperToPoint: (isMoving: boolean) => void;
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
     isShowingTablet: boolean;
     setIsShowingTablet: (isShowing: boolean) => void;
     underVideoAreaRef: React.RefObject<HTMLDivElement>;
@@ -824,15 +807,10 @@ const UnderVideoButtons = (props: {
                     setPredictiveDisplay={props.setPredictiveDisplay}
                     selectLocationScaledXY={props.selectLocationScaledXY}
                     setSelectLocationScaledXY={props.setSelectLocationScaledXY}
-<<<<<<< HEAD
-                    isMovingToPoint={props.isMovingToPoint}
-                    setIsMovingToPoint={props.setIsMovingToPoint}
-=======
                     isMovingBaseToPoint={props.isMovingBaseToPoint}
                     isMovingGripperToPoint={props.isMovingGripperToPoint}
                     setIsMovingBaseToPoint={props.setIsMovingBaseToPoint}
                     setIsMovingGripperToPoint={props.setIsMovingGripperToPoint}
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
                     stretchTool={props.stretchTool}
                 />
             );
@@ -890,8 +868,6 @@ const UnderOverheadButtons = (props: {
 /**
  * Buttons to display under the adjustable overhead video stream.
  */
-<<<<<<< HEAD
-=======
 const CustomStartButton = (props: {
     button_text: string;
     onClick: () => void;
@@ -916,21 +892,15 @@ const CustomCancelButton = (props: {
     );
 };
 
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
 const UnderAdjustableOverheadButtons = (props: {
     definition: AdjustableOverheadVideoStreamDef;
     setPredictiveDisplay: (enabled: boolean) => void;
     selectLocationScaledXY: [number, number] | null;
     setSelectLocationScaledXY: (scaledXY: [number, number] | null) => void;
-<<<<<<< HEAD
-    isMovingToPoint: boolean;
-    setIsMovingToPoint: (isMoving: boolean) => void;
-=======
     isMovingBaseToPoint: boolean;
     isMovingGripperToPoint: boolean;
     setIsMovingBaseToPoint: (isMoving: boolean) => void;
     setIsMovingGripperToPoint: (isMoving: boolean) => void;
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
     stretchTool: StretchTool;
 }) => {
     const [rerender, setRerender] = React.useState<boolean>(false);
@@ -941,46 +911,6 @@ const UnderAdjustableOverheadButtons = (props: {
     if (props.stretchTool === StretchTool.DEX_GRIPPER) {
         moveBaseToPointButtons = (
             <React.Fragment>
-<<<<<<< HEAD
-                {/* <CheckToggleButton
-                    checked={
-                        props.definition.selectLocationForMoveToPoint || false
-                    }
-                    onClick={() => {
-                        props.definition.selectLocationForMoveToPoint =
-                            !props.definition.selectLocationForMoveToPoint;
-                        props.setSelectLocationScaledXY(null);
-                        setRerender(!rerender);
-                    }}
-                    label="Select Location"
-                /> */}
-                {props.isMovingToPoint ? (
-                    <button
-                        className="map-cancel-btn"
-                        onPointerDown={() => {
-                            underVideoFunctionProvider.provideFunctions(
-                                UnderVideoButton.CancelMoveToPoint
-                            ).onClick!();
-                            props.setIsMovingToPoint(false);
-                        }}
-                    >
-                        <span>Cancel</span>
-                        <CancelIcon />
-                    </button>
-                ) : (
-                    <button
-                        className="map-play-btn"
-                        onPointerDown={() => {
-                            underVideoFunctionProvider.provideFunctions(
-                                UnderVideoButton.StartMoveToPoint
-                            ).onClick!(props.selectLocationScaledXY);
-                            props.setIsMovingToPoint(false);
-                        }}
-                    >
-                        <span>Move!</span>
-                        <PlayCircleFilledIcon />
-                    </button>
-=======
                 {props.isMovingBaseToPoint ? (
                     <CustomCancelButton
                         button_text="Stop Base!"
@@ -1058,7 +988,6 @@ const UnderAdjustableOverheadButtons = (props: {
                             });
                         }}
                     />
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
                 )}
             </React.Fragment>
         );

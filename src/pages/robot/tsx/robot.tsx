@@ -1287,23 +1287,11 @@ export class Robot extends React.Component {
                     message.op === "action_response" &&
                     message.response_type === "feedback"
                 ) {
-<<<<<<< HEAD
-                    const { new_scaled_x, new_scaled_y } =
-                        message.values.feedback;
-                    if (new_scaled_x && new_scaled_y) {
-                        if (this.moveToPointFeedbackCallback) {
-                            this.moveToPointFeedbackCallback({
-                                new_scaled_x: new_scaled_x,
-                                new_scaled_y: new_scaled_y,
-                            });
-                        }
-=======
                     if (this.moveBaseToPointFeedbackCallback) {
                         this.moveBaseToPointFeedbackCallback({
                             new_scaled_x: message.values.feedback.new_scaled_x,
                             new_scaled_y: message.values.feedback.new_scaled_y,
                         });
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
                     }
                 }
             }

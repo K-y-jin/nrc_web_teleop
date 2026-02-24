@@ -14,10 +14,8 @@ import rclpy
 # Third-Party Imports
 import stretch_urdf.urdf_utils as uu
 import tf2_ros
-import yaml
 
 from cv_bridge import CvBridge
-from geometry_msgs.msg import Point, Quaternion, Transform, TransformStamped, Vector3
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.action.server import ServerGoalHandle
 from rclpy.callback_groups import ReentrantCallbackGroup, MutuallyExclusiveCallbackGroup
@@ -26,36 +24,17 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import CameraInfo, CompressedImage
-from std_msgs.msg import Header
-from tf2_geometry_msgs import PoseStamped
-from tf_transformations import quaternion_about_axis, quaternion_multiply
 
 # Local Imports
-<<<<<<< HEAD:nodes/move_to_point.py
-from nrc_web_teleop.action import MoveToPoint
-from stretch_web_teleop_helpers.constants import (
-    Frame,
-=======
 from nrc_web_teleop.action import MoveGripperToPoint
 from nrc_web_teleop_helpers.constants import (
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nodes/move_gripper_to_point.py
     Joint,
-    adjust_arm_lift_for_base_collision,
-    get_pregrasp_wrist_configuration,
-    get_stow_configuration,
 )
-from stretch_web_teleop_helpers.conversions import (
+from nrc_web_teleop_helpers.conversions import (
     remaining_time,
-    ros_msg_to_cv2_image,
-    tf2_transform,
 )
-<<<<<<< HEAD:nodes/move_to_point.py
-from stretch_web_teleop_helpers.move_to_point_state import MoveToPointState
-from stretch_web_teleop_helpers.stretch_ik_control import (
-=======
 from nrc_web_teleop_helpers.move_gripper_to_point_state import MoveGripperToPointState
 from nrc_web_teleop_helpers.stretch_ik_control import (
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nodes/move_gripper_to_point.py
     MotionGeneratorRetval,
     StretchIKControl,
 )
@@ -100,14 +79,6 @@ class MoveGripperToPointNode(Node):
             self.navigation_camera_cb,
             QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT),
         )
-        self.latest_navigation_info_lock = threading.Lock()
-        self.latest_navigation_info: Optional[CameraInfo] = None
-        self.navigation_camera_info_subscriber = self.create_subscription(
-            CameraInfo,
-            "/navigation_camera/camera_info",
-            self.navigation_info_cb,
-            qos_profile=QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT),
-        )
 
         # Create the action timeout
         self.action_timeout = Duration(seconds=action_timeout_secs)
@@ -129,7 +100,7 @@ class MoveGripperToPointNode(Node):
         # Create the action server
         self.action_server = ActionServer(
             self,
-            MoveGripperToPoint, 
+            MoveGripperToPoint,
             "move_gripper_to_point",
             self.execute_callback,
             goal_callback=self.goal_callback,
@@ -143,18 +114,7 @@ class MoveGripperToPointNode(Node):
         with self.latest_navigation_camera_image_lock:
             self.latest_navigation_camera_image = ros_image
 
-<<<<<<< HEAD:nodes/move_to_point.py
-    def navigation_info_cb(
-        self,
-        info_msg: CameraInfo,
-    ) -> None:
-        with self.latest_navigation_info_lock:
-            self.latest_navigation_info = info_msg
-
-    def goal_callback(self, goal_request: MoveToPoint.Goal) -> GoalResponse:
-=======
     def goal_callback(self, goal_request: MoveGripperToPoint.Goal) -> GoalResponse:
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nodes/move_gripper_to_point.py
         self.get_logger().info(f"Received request {goal_request}")
 
         # Reject the goal if no Navigation Camera RGB image has been received yet
@@ -174,10 +134,10 @@ class MoveGripperToPointNode(Node):
                 )
                 return GoalResponse.REJECT
 
-        # Accept the goal
-        self.get_logger().info("Accepting goal request")
-        self.active_goal_request = goal_request
-        return GoalResponse.ACCEPT
+            # Accept the goal
+            self.get_logger().info("Accepting goal request")
+            self.active_goal_request = goal_request
+            return GoalResponse.ACCEPT
 
     def cancel_callback(self, _: ServerGoalHandle) -> CancelResponse:
         """
@@ -192,21 +152,19 @@ class MoveGripperToPointNode(Node):
 
     async def execute_callback(
         self, goal_handle: ServerGoalHandle
-<<<<<<< HEAD:nodes/move_to_point.py
-    ) -> MoveToPoint.Result:
-=======
     ) -> MoveGripperToPoint.Result:
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nodes/move_gripper_to_point.py
-        
+    
         # Functions to cleanup the action
         terminate_motion_executors = False
         motion_executors: List[Generator[MotionGeneratorRetval, None, None]] = []
 
-        def cleanup():
-            """Clean up resources after action completion"""
-            with self.active_goal_request_lock:
-                self.active_goal_request = None
-
+        def cleanup() -> None:
+            """
+            Clean up before returning from the action.
+            """
+            nonlocal terminate_motion_executors, motion_executors
+            self.active_goal_request = None
+            self.get_logger().debug("Setting termination flag to True")
             terminate_motion_executors = True
             # Execute the motion executors once more to process cancellation.
             if len(motion_executors) > 0:
@@ -245,132 +203,14 @@ class MoveGripperToPointNode(Node):
         start_time = self.get_clock().now()
 
         # Initialize the feedback
-<<<<<<< HEAD:nodes/move_to_point.py
-        feedback = MoveToPoint.Feedback()
-        feedback.new_scaled_x = -1.0
-        feedback.new_scaled_y = -1.0
-=======
         feedback = MoveGripperToPoint.Feedback()
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nodes/move_gripper_to_point.py
 
-        # Initialize ORB + Opticalflow tracker
-        orb = cv2.ORB_create(nfeatures=1000)
-        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-        prev_gray = None
-        prev_keypoints = None
-        prev_descriptors = None
-        frame_count = 0
-        reinit_interval = 10
         goal_point = None
-        tracking_failure_count = 0
-        max_failure_count = 5
-
-        def get_keypoints_and_descriptors():
-            with self.latest_navigation_camera_image_lock:
-                navigation_camera_image = self.latest_navigation_camera_image
-            navigation_camera_image = ros_msg_to_cv2_image(navigation_camera_image, self.cv_bridge)
-            gray_image = cv2.cvtColor(navigation_camera_image, cv2.COLOR_RGB2GRAY)
-            # 
-            return orb.detectAndCompute(image=gray_image, mask=None)
-        
-        # Update the goal point
-        def update_goal_point_from_yaw_error(yaw_error: float, head_pan: float):
-            self.get_logger().info(f"##### Head Pan: {yaw_error}, {head_pan}")
-            if yaw_error + head_pan > -np.pi/4 and yaw_error + head_pan < np.pi/4:
-                raw_scaled_u = 0.5 * np.tan(yaw_error + head_pan) + 0.5
-                self.get_logger().info(f"##### Updated Goal: [{raw_scaled_u}, {raw_scaled_v}]")
-                # Update the feedback
-                feedback.new_scaled_x = raw_scaled_u
-                feedback.new_scaled_y = raw_scaled_v
-                feedback.elapsed_time = (self.get_clock().now() - start_time).to_msg()
-                goal_handle.publish_feedback(feedback)
-            else:
-                self.get_logger().info(f"##### Fail Update: {yaw_error}")
-
-        def update_goal_point() -> bool:
-            # Convert into format for Homography transformation: [x, y, 1]
-            goal_point = np.array([raw_scaled_u * image_width, raw_scaled_v * image_height, 1.0], dtype=np.float32)
-            keypoints, descriptors = get_keypoints_and_descriptors()
-            if keypoints is not None and descriptors is not None:           
-                matches = bf.match(descriptors, prev_descriptors)
-                matches = sorted(matches, key=lambda x: x.distance)
-                
-                # 매칭 품질 확인
-                MAX_DISTANCE = 50.0  # ORB descriptor distance 임계값
-                MIN_MATCHES = 10     # 최소 필요한 매칭 개수
-                
-                # 좋은 매칭만 필터링
-                good_matches = [m for m in matches if m.distance < MAX_DISTANCE]
-                
-                self.get_logger().info(f"##### Total matches: {len(matches)}, Good matches: {len(good_matches)}")
-                if len(good_matches) > 0:
-                    avg_distance = sum(m.distance for m in good_matches) / len(good_matches)
-                    max_distance = max(m.distance for m in good_matches)
-                    min_distance = min(m.distance for m in good_matches)
-                    self.get_logger().info(f"##### Match quality - Avg: {avg_distance:.2f}, Min: {min_distance:.2f}, Max: {max_distance:.2f}")
-                
-                # 충분한 좋은 매칭이 없으면 실패
-                if len(good_matches) < MIN_MATCHES:
-                    self.get_logger().warn(f"##### Insufficient good matches: {len(good_matches)} < {MIN_MATCHES}")
-                    return False
-                
-                # 좋은 매칭만 사용하여 keypoints 추출
-                pts1 = np.float32([keypoints[m.queryIdx].pt for m in good_matches])
-                pts2 = np.float32([prev_keypoints[m.trainIdx].pt for m in good_matches])
-
-                H, inliers = cv2.findHomography(pts1, pts2, cv2.RANSAC, 3.0)
-
-                if H is not None:
-                    # Homography 품질 확인
-                    inlier_ratio = np.sum(inliers) / len(inliers) if len(inliers) > 0 else 0
-                    self.get_logger().info(f"##### Homography quality - Inliers: {np.sum(inliers)}/{len(inliers)} ({inlier_ratio:.2%})")
-                    
-                    # 인라이어 비율이 너무 낮으면 신뢰할 수 없음
-                    MIN_INLIER_RATIO = 0.3  # 30% 이상의 인라이어 필요
-                    if inlier_ratio < MIN_INLIER_RATIO:
-                        self.get_logger().warn(f"##### Low inlier ratio: {inlier_ratio:.2%} < {MIN_INLIER_RATIO:.2%}")
-                        return False
-                    # Apply homography transformation
-                    current_goal_point = H @ goal_point
-                    # Normalize homogeneous coordinates
-                    current_goal_point = current_goal_point / current_goal_point[2]
-                    # Extract x, y coordinates
-                    current_x, current_y = current_goal_point[0], current_goal_point[1]
-                    self.get_logger().info(f"##### Updated Goal Point: [{current_x}, {current_y}]")
-                    # Update the feedback
-                    feedback.new_scaled_x = current_x / image_width
-                    feedback.new_scaled_y = current_y / image_height
-                    feedback.elapsed_time = (self.get_clock().now() - start_time).to_msg()
-                    goal_handle.publish_feedback(feedback)
-                    return True
-            return False
-
-        # Get the camera info
-        with self.latest_navigation_info_lock:
-            image_width = self.latest_navigation_info.width
-            image_height = self.latest_navigation_info.height
-            # k_matrix = self.latest_navigation_info.k
-            # self.get_logger().debug(
-            #     f"##### Image dimensions (WxH): {(image_width, image_height)}"
-            # )
-            # not in valid use
-            # self.get_logger().debug(
-            #     f"##### K Matrix: {k_matrix}"
-            # )
-
-
-        # Get keypoints and descriptors from the initial image
-        prev_keypoints, prev_descriptors = get_keypoints_and_descriptors()
-
         # Get the initial goal point
-        raw_scaled_u, raw_scaled_v = (
-            goal_handle.request.scaled_u,
-            goal_handle.request.scaled_v,
+        raw_scaled_x, raw_scaled_y = (
+            goal_handle.request.scaled_x,
+            goal_handle.request.scaled_y,
         )
-<<<<<<< HEAD:nodes/move_to_point.py
-            
-        self.get_logger().debug(f"##### Initial Goal Point: {goal_point}")
-=======
         goal_point = np.array([raw_scaled_x, raw_scaled_y])
         self.get_logger().debug(f"Initial Goal Point of the Gripper: {goal_point}")
 
@@ -380,29 +220,20 @@ class MoveGripperToPointNode(Node):
             feedback.elapsed_time = (self.get_clock().now() - start_time).to_msg()
             goal_handle.publish_feedback(feedback)    
 
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nodes/move_gripper_to_point.py
         # Execute the states
         motion_executors: List[Generator[MotionGeneratorRetval, None, None]] = []
         states = MoveGripperToPointState.get_state_machine(setup_mode=True)
-        self.get_logger().info(f"All States: {states}")
+        # self.get_logger().info(f"All States: {states}")
 
         state_i = 0
         rate = self.create_rate(5.0)  # 5 Hz
-<<<<<<< HEAD:nodes/move_to_point.py
-        ik_solution = self.controller.get_current_joints()
-        pan_theta = np.arctan2(0.5, raw_scaled_u - 0.5) - np.pi/2 # HFOV 90deg
-        ik_solution[Joint.BASE_ROTATION] = ik_solution[Joint.HEAD_PAN] + pan_theta
-        ik_solution[Joint.HEAD_PAN] = 0.0
-        self.get_logger().info(f"##### pan_theta: {pan_theta}")
-        
-=======
 
         # Calculate the goal positions
         initial_head_joint_states = self.controller.get_head_joint_states()
         initial_head_pan = initial_head_joint_states[Joint.HEAD_PAN]
         initial_head_tilt = initial_head_joint_states[Joint.HEAD_TILT]
 
-        pan_theta = np.pi / 2 # Look at the gripper
+        pan_theta = -1.0 * np.arctan2(raw_scaled_x - 0.5, 0.5) # HFOV 90deg
         beta = np.pi * (127.0/180.0) # VFOV 127deg
         focal_length = 0.5 / np.tan(beta/2.0)
         alpha = -1.0 * np.arctan2(raw_scaled_y-0.5, focal_length)  # tan(alpha) = (y-0.5) / focal_length
@@ -412,14 +243,14 @@ class MoveGripperToPointNode(Node):
         
         alpha = np.arctan2(0.5 - feedback.new_scaled_y, focal_length)
         height = 1.24 # about 1 m
-        x_dist = 0.0
+        x_dist = 0.0 # height * np.tan(np.pi/2 + tilt_theta + alpha)
+        # self.get_logger().info(f"##### x_dist: {x_dist}")
 
         goal_positions = {}
         goal_positions[Joint.BASE_ROTATION] = initial_head_pan + pan_theta
         goal_positions[Joint.HEAD_PAN] = pan_theta
         goal_positions[Joint.HEAD_TILT] = tilt_theta
         goal_positions[Joint.BASE_TRANSLATION] = x_dist
-        
         def update_feedback_and_publish_feedback(distance_error: float):
             nonlocal tilt_theta, beta, focal_length, height
             feedback.elapsed_time = (self.get_clock().now() - start_time).to_msg()
@@ -430,12 +261,11 @@ class MoveGripperToPointNode(Node):
             goal_handle.publish_feedback(feedback)
 
         # Loop
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nodes/move_gripper_to_point.py
         while rclpy.ok():
             concurrent_states = states[state_i]
-            self.get_logger().info(
-                f"Executing States: {concurrent_states}", throttle_duration_sec=1.0
-            )
+            # self.get_logger().info(
+            #     f"Executing States: {concurrent_states}", throttle_duration_sec=1.0
+            # )
             # Check if a cancel has been requested   
             if goal_handle.is_cancel_requested:
                 return action_cancel_callback("Goal canceled")
@@ -448,7 +278,7 @@ class MoveGripperToPointNode(Node):
                 for state in concurrent_states:
                     motion_executor = state.get_motion_executor(
                         controller=self.controller,
-                        ik_solution=ik_solution,
+                        ik_solution=goal_positions,
                         timeout_secs=remaining_time(
                             self.get_clock().now(),
                             start_time,
@@ -456,8 +286,8 @@ class MoveGripperToPointNode(Node):
                             return_secs=True,
                         ),
                         check_cancel=lambda: terminate_motion_executors,
-                        err_callback=update_goal_point_from_yaw_error,
-                        success_callback=None,
+                        err_callback=[update_feedback_and_publish_feedback],
+                        success_callback=[publish_update_goal_point_feedback],
                     )
                     if motion_executor is None:
                         return action_success_callback("Goal succeeded")
@@ -470,7 +300,7 @@ class MoveGripperToPointNode(Node):
                         if retval == MotionGeneratorRetval.SUCCESS:
                             motion_executors.pop(i)
                             self.get_logger().info(
-                                f"##### Success (State: {state_i})"
+                                f"Success (State Num {state_i}:{concurrent_states}"
                             )
                             break
                         elif retval == MotionGeneratorRetval.FAILURE:

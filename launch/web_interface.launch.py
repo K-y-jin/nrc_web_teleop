@@ -578,12 +578,8 @@ def generate_launch_description():
         )
         ld.add_action(show_tablet_node)
 
-<<<<<<< HEAD
-    move_to_point_node = Node(
-=======
     # Move Base To Point Node
     move_base_to_point_node = Node(
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
         package="nrc_web_teleop",
         executable="move_base_to_point.py",
         output="screen",

@@ -213,11 +213,6 @@ function handleWebRTCMessage(message: WebRTCMessage | WebRTCMessage[]) {
             console.log("moveBaseToPointState", message.message);
             underVideoFunctionProvider.setMoveBaseToPointState(message.message);
             break;
-<<<<<<< HEAD
-        case "moveToPointActionFeedback":
-            console.log("##### moveToPointActionFeedback", message.message);
-            underVideoFunctionProvider.setMoveToPointActionFeedback(
-=======
         case "moveGripperToPointState":
             console.log("moveGripperToPointState", message.message);
             underVideoFunctionProvider.setMoveGripperToPointState(
@@ -254,7 +249,6 @@ function handleWebRTCMessage(message: WebRTCMessage | WebRTCMessage[]) {
                 message.message
             );
             underVideoFunctionProvider.handleMoveGripperToPointActionFeedback(
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
                 message.message
             );
             break;

@@ -35,18 +35,12 @@ export enum UnderVideoButton {
     StartMoveToPregraspVertical = "Gripper Vertical",
     CancelMoveToPregrasp = "Cancel Goal",
     MoveToPregraspGoalReached = "Goal Reached",
-<<<<<<< HEAD
-    StartMoveToPoint = "Start Moving ",
-    CancelMoveToPoint = "Cancel Goal",
-    MoveToPointGoalReached = "Goal Reached",
-=======
     StartMoveBaseToPoint = "Start MoveBaseToPoint",
     CancelMoveBaseToPoint = "Cancel MoveBaseToPoint",
     MoveBaseToPointGoalReached = "MoveBaseToPoint Goal Reached",
     StartMoveGripperToPoint = "Start MoveGripperToPoint",
     CancelMoveGripperToPoint = "Cancel MoveGripperToPoint",
     MoveGripperToPointGoalReached = "MoveGripperToPoint Goal Reached",
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
     ToggleTabletOrientation = "Toggle Tablet Orientation",
     GetTabletOrientation = "Get Tablet Orientation",
     RealsenseBodyPoseEstimate = "Show Body Pose",
@@ -171,13 +165,6 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
             this.moveBaseToPointOperatorCallback(state);
     }
 
-<<<<<<< HEAD
-    /**
-     * Called when a response is received from the robot for the move to point action feedback.
-     * @param feedback the move to point action feedback to set
-     */
-    public setMoveToPointActionFeedback(feedback: MoveToPointActionFeedback) {
-=======
     public setMoveGripperToPointState(state: ActionState) {
         this.lastMoveGripperToPointStateTimestamp = Date.now();
         if (this.moveGripperToPointOperatorCallback)
@@ -198,7 +185,6 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
     public handleMoveGripperToPointActionFeedback(
         feedback: MoveGripperToPointActionFeedback
     ) {
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
         if (this.selectedLocationScaledXYCallback) {
             this.selectedLocationScaledXYCallback([
                 feedback.new_scaled_x,
@@ -369,8 +355,6 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
                     onClick: () =>
                         FunctionProvider.remoteRobot?.stopMoveBaseToPoint(),
                 };
-<<<<<<< HEAD
-=======
             case UnderVideoButton.StartMoveGripperToPoint:
                 return {
                     onClick: (scaledXY: [number, number] | null) => {
@@ -392,7 +376,6 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
                     onClick: () =>
                         FunctionProvider.remoteRobot?.stopMoveGripperToPoint(),
                 };
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
             case UnderVideoButton.ToggleArucoMarkers:
                 return {
                     onCheck: (toggle: boolean) =>

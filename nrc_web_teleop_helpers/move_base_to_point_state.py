@@ -46,21 +46,11 @@ class MoveBaseToPointState(Enum):
     def get_state_machine(setup_mode: bool = True) -> List[List[MoveBaseToPointState]]:
         states = []
         if setup_mode:
-<<<<<<< HEAD:nrc_web_teleop_helpers/move_to_point_state.py
-            states.append([MoveToPointState.STOW_ARM])
-            states.append([MoveToPointState.ROTATE_BASE, MoveToPointState.HEAD_PAN])
-            states.append([MoveToPointState.TERMINAL])
-        else:
-            states.append([MoveToPointState.STOW_ARM])
-            states.append([MoveToPointState.MOVE_BASE])
-            states.append([MoveToPointState.TERMINAL])
-=======
             states.append([MoveBaseToPointState.STOW_ARM])
             states.append([MoveBaseToPointState.ROTATE_BASE, MoveBaseToPointState.HEAD_PAN])
             states.append([MoveBaseToPointState.HEAD_TILT])
             states.append([MoveBaseToPointState.MOVE_BASE])
         states.append([MoveBaseToPointState.TERMINAL])
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nrc_web_teleop_helpers/move_base_to_point_state.py
         return states
 
     def get_motion_executor(
@@ -87,12 +77,8 @@ class MoveBaseToPointState(Enum):
                 get_stow_configuration([Joint.ARM_L0, Joint.ARM_LIFT, Joint.WRIST_PITCH],
                 grip_stuff=True)
             )
-<<<<<<< HEAD:nrc_web_teleop_helpers/move_to_point_state.py
-        elif self == MoveToPointState.ROTATE_BASE:
-=======
         elif self == MoveBaseToPointState.ROTATE_BASE:
             success_callback_temp = success_callback[0]
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nrc_web_teleop_helpers/move_base_to_point_state.py
             goal_pose = PoseStamped()
             header = Header()
             header.frame_id = "base_link"
@@ -112,15 +98,6 @@ class MoveBaseToPointState(Enum):
                     if joint != Joint.BASE_ROTATION
                 }
             )
-<<<<<<< HEAD:nrc_web_teleop_helpers/move_to_point_state.py
-        elif self == MoveToPointState.HEAD_PAN:
-            joints_for_position_control[Joint.HEAD_PAN] = ik_solution[Joint.HEAD_PAN]
-            # velocity_overrides[Joint.HEAD_PAN] = controller.joint_vel_abs_lim[
-            #     Joint.BASE_ROTATION
-            # ][1]
-        elif self == MoveToPointState.MOVE_BASE:
-            joints_for_position_control.update(get_stow_configuration([Joint.ARM_LIFT]))
-=======
         elif self == MoveBaseToPointState.HEAD_PAN:
             joints_for_position_control[Joint.HEAD_PAN] = 0.0
             velocity_overrides[Joint.HEAD_PAN] = controller.joint_vel_abs_lim[
@@ -151,7 +128,6 @@ class MoveBaseToPointState(Enum):
                 err_callback=error_callback_temp,
                 success_callback=success_callback_temp,
             )
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nrc_web_teleop_helpers/move_base_to_point_state.py
 
         # Create the motion executor
         if len(joints_for_velocity_control) > 0:

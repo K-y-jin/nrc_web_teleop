@@ -165,10 +165,6 @@ function forwardMoveBaseToPointActionFeedback(
 ) {
     if (!connection) throw "WebRTC connection undefined!";
 
-<<<<<<< HEAD
-    // console.log("##### ToPointActionFeedback", feedback);
-=======
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
     connection.sendData({
         type: "moveBaseToPointActionFeedback",
         message: feedback,

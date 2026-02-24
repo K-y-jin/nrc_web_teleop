@@ -150,19 +150,11 @@ export const Operator = (props: {
     );
     let moveBaseToPointAlertTimeout: NodeJS.Timeout;
     React.useEffect(() => {
-<<<<<<< HEAD
-        if (moveToPointState && moveToPointState.alert_type != "info") {
-            if (moveToPointAlertTimeout)
-                clearTimeout(moveToPointAlertTimeout);
-            moveToPointAlertTimeout = setTimeout(() => {
-                setMoveToPointState(undefined);
-=======
         if (moveBaseToPointState && moveBaseToPointState.alert_type != "info") {
             if (moveBaseToPointAlertTimeout)
                 clearTimeout(moveBaseToPointAlertTimeout);
             moveBaseToPointAlertTimeout = setTimeout(() => {
                 setMoveBaseToPointState(undefined);
->>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
             }, 5000);
         }
     }, [moveBaseToPointState]);
