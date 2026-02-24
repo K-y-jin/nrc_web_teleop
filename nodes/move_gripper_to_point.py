@@ -31,9 +31,14 @@ from tf2_geometry_msgs import PoseStamped
 from tf_transformations import quaternion_about_axis, quaternion_multiply
 
 # Local Imports
+<<<<<<< HEAD:nodes/move_to_point.py
 from nrc_web_teleop.action import MoveToPoint
 from stretch_web_teleop_helpers.constants import (
     Frame,
+=======
+from nrc_web_teleop.action import MoveGripperToPoint
+from nrc_web_teleop_helpers.constants import (
+>>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nodes/move_gripper_to_point.py
     Joint,
     adjust_arm_lift_for_base_collision,
     get_pregrasp_wrist_configuration,
@@ -44,14 +49,19 @@ from stretch_web_teleop_helpers.conversions import (
     ros_msg_to_cv2_image,
     tf2_transform,
 )
+<<<<<<< HEAD:nodes/move_to_point.py
 from stretch_web_teleop_helpers.move_to_point_state import MoveToPointState
 from stretch_web_teleop_helpers.stretch_ik_control import (
+=======
+from nrc_web_teleop_helpers.move_gripper_to_point_state import MoveGripperToPointState
+from nrc_web_teleop_helpers.stretch_ik_control import (
+>>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nodes/move_gripper_to_point.py
     MotionGeneratorRetval,
     StretchIKControl,
 )
 
 
-class MoveToPointNode(Node):
+class MoveGripperToPointNode(Node):
 
     def __init__(
         self,
@@ -59,7 +69,7 @@ class MoveToPointNode(Node):
         action_timeout_secs: float = 60.0,
     ):
 
-        super().__init__("move_to_point")
+        super().__init__("move_gripper_to_point")
 
         # Initialize TF2
         self.tf_timeout = Duration(seconds=tf_timeout_secs)
@@ -119,8 +129,8 @@ class MoveToPointNode(Node):
         # Create the action server
         self.action_server = ActionServer(
             self,
-            MoveToPoint,
-            "move_to_point",
+            MoveGripperToPoint, 
+            "move_gripper_to_point",
             self.execute_callback,
             goal_callback=self.goal_callback,
             cancel_callback=self.cancel_callback,
@@ -133,6 +143,7 @@ class MoveToPointNode(Node):
         with self.latest_navigation_camera_image_lock:
             self.latest_navigation_camera_image = ros_image
 
+<<<<<<< HEAD:nodes/move_to_point.py
     def navigation_info_cb(
         self,
         info_msg: CameraInfo,
@@ -141,6 +152,9 @@ class MoveToPointNode(Node):
             self.latest_navigation_info = info_msg
 
     def goal_callback(self, goal_request: MoveToPoint.Goal) -> GoalResponse:
+=======
+    def goal_callback(self, goal_request: MoveGripperToPoint.Goal) -> GoalResponse:
+>>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nodes/move_gripper_to_point.py
         self.get_logger().info(f"Received request {goal_request}")
 
         # Reject the goal if no Navigation Camera RGB image has been received yet
@@ -152,13 +166,13 @@ class MoveToPointNode(Node):
                 return GoalResponse.REJECT
 
         # Reject the goal is there is already an active goal
-        # with self.active_goal_request_lock:
-        #     if self.active_goal_request is not None:
+        with self.active_goal_request_lock:
+            if self.active_goal_request is not None:
                 
-        #         self.get_logger().info(
-        #             "Rejecting goal request since there is already an active one"
-        #         )
-        #         return GoalResponse.REJECT
+                self.get_logger().info(
+                    "Rejecting goal request since there is already an active one"
+                )
+                return GoalResponse.REJECT
 
         # Accept the goal
         self.get_logger().info("Accepting goal request")
@@ -178,7 +192,11 @@ class MoveToPointNode(Node):
 
     async def execute_callback(
         self, goal_handle: ServerGoalHandle
+<<<<<<< HEAD:nodes/move_to_point.py
     ) -> MoveToPoint.Result:
+=======
+    ) -> MoveGripperToPoint.Result:
+>>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nodes/move_gripper_to_point.py
         
         # Functions to cleanup the action
         terminate_motion_executors = False
@@ -200,36 +218,40 @@ class MoveToPointNode(Node):
 
         def action_error_callback(
             error_msg: str = "Goal failed",
-            status: int = MoveToPoint.Result.STATUS_FAILURE,
-        ) -> MoveToPoint.Result:
+            status: int = MoveGripperToPoint.Result.STATUS_FAILURE,
+        ) -> MoveGripperToPoint.Result:
             self.get_logger().error(error_msg)
             goal_handle.abort()
             cleanup()
-            return MoveToPoint.Result(status=status)
+            return MoveGripperToPoint.Result(status=status)
 
         def action_success_callback(
             success_msg: str = "Goal succeeded",
-        ) -> MoveToPoint.Result:
+        ) -> MoveGripperToPoint.Result:
             self.get_logger().info(success_msg)
             goal_handle.succeed()
             cleanup()
-            return MoveToPoint.Result(status=MoveToPoint.Result.STATUS_SUCCESS)
+            return MoveGripperToPoint.Result(status=MoveGripperToPoint.Result.STATUS_SUCCESS)
 
         def action_cancel_callback(
             cancel_msg: str = "Goal canceled",
-        ) -> MoveToPoint.Result:
+        ) -> MoveGripperToPoint.Result:
             self.get_logger().info(cancel_msg)
             goal_handle.canceled()
             cleanup()
-            return MoveToPoint.Result(status=MoveToPoint.Result.STATUS_CANCELLED)
+            return MoveGripperToPoint.Result(status=MoveGripperToPoint.Result.STATUS_CANCELLED)
 
         # Start the timer
         start_time = self.get_clock().now()
 
         # Initialize the feedback
+<<<<<<< HEAD:nodes/move_to_point.py
         feedback = MoveToPoint.Feedback()
         feedback.new_scaled_x = -1.0
         feedback.new_scaled_y = -1.0
+=======
+        feedback = MoveGripperToPoint.Feedback()
+>>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nodes/move_gripper_to_point.py
 
         # Initialize ORB + Opticalflow tracker
         orb = cv2.ORB_create(nfeatures=1000)
@@ -345,21 +367,70 @@ class MoveToPointNode(Node):
             goal_handle.request.scaled_u,
             goal_handle.request.scaled_v,
         )
+<<<<<<< HEAD:nodes/move_to_point.py
             
         self.get_logger().debug(f"##### Initial Goal Point: {goal_point}")
+=======
+        goal_point = np.array([raw_scaled_x, raw_scaled_y])
+        self.get_logger().debug(f"Initial Goal Point of the Gripper: {goal_point}")
+
+        # Publich_feedback message
+        def publish_update_goal_point_feedback():
+            self.get_logger().info(f"Current Goal Point of the Gripper: [{feedback.new_scaled_x}, {feedback.new_scaled_y}]")
+            feedback.elapsed_time = (self.get_clock().now() - start_time).to_msg()
+            goal_handle.publish_feedback(feedback)    
+
+>>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nodes/move_gripper_to_point.py
         # Execute the states
         motion_executors: List[Generator[MotionGeneratorRetval, None, None]] = []
-        states = MoveToPointState.get_state_machine(setup_mode=True)
+        states = MoveGripperToPointState.get_state_machine(setup_mode=True)
         self.get_logger().info(f"All States: {states}")
 
         state_i = 0
         rate = self.create_rate(5.0)  # 5 Hz
+<<<<<<< HEAD:nodes/move_to_point.py
         ik_solution = self.controller.get_current_joints()
         pan_theta = np.arctan2(0.5, raw_scaled_u - 0.5) - np.pi/2 # HFOV 90deg
         ik_solution[Joint.BASE_ROTATION] = ik_solution[Joint.HEAD_PAN] + pan_theta
         ik_solution[Joint.HEAD_PAN] = 0.0
         self.get_logger().info(f"##### pan_theta: {pan_theta}")
         
+=======
+
+        # Calculate the goal positions
+        initial_head_joint_states = self.controller.get_head_joint_states()
+        initial_head_pan = initial_head_joint_states[Joint.HEAD_PAN]
+        initial_head_tilt = initial_head_joint_states[Joint.HEAD_TILT]
+
+        pan_theta = np.pi / 2 # Look at the gripper
+        beta = np.pi * (127.0/180.0) # VFOV 127deg
+        focal_length = 0.5 / np.tan(beta/2.0)
+        alpha = -1.0 * np.arctan2(raw_scaled_y-0.5, focal_length)  # tan(alpha) = (y-0.5) / focal_length
+        tilt_theta = -np.pi * (33.0/180.0) # -33deg down # unseen x is zero when 33deg down
+        feedback.new_scaled_x = 0.5
+        feedback.new_scaled_y = focal_length * np.tan(tilt_theta - (initial_head_tilt+alpha)) + 0.5
+        
+        alpha = np.arctan2(0.5 - feedback.new_scaled_y, focal_length)
+        height = 1.24 # about 1 m
+        x_dist = 0.0
+
+        goal_positions = {}
+        goal_positions[Joint.BASE_ROTATION] = initial_head_pan + pan_theta
+        goal_positions[Joint.HEAD_PAN] = pan_theta
+        goal_positions[Joint.HEAD_TILT] = tilt_theta
+        goal_positions[Joint.BASE_TRANSLATION] = x_dist
+        
+        def update_feedback_and_publish_feedback(distance_error: float):
+            nonlocal tilt_theta, beta, focal_length, height
+            feedback.elapsed_time = (self.get_clock().now() - start_time).to_msg()
+            alpha = np.arctan2(distance_error, height) - beta/2
+            feedback.new_scaled_y = 0.5 - focal_length * np.tan(alpha)
+            feedback.new_scaled_x = 0.5
+            # self.get_logger().info(f"##### Feedback: {distance_error}")
+            goal_handle.publish_feedback(feedback)
+
+        # Loop
+>>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point):nodes/move_gripper_to_point.py
         while rclpy.ok():
             concurrent_states = states[state_i]
             self.get_logger().info(
@@ -370,7 +441,7 @@ class MoveToPointNode(Node):
                 return action_cancel_callback("Goal canceled")
             # Check if the action has timed out
             if (self.get_clock().now() - start_time) > self.action_timeout:
-                return action_error_callback("Goal timed out", MoveToPoint.Result.STATUS_TIMEOUT)
+                return action_error_callback("Goal timed out", MoveGripperToPoint.Result.STATUS_TIMEOUT)
 
             # Move the robot
             if len(motion_executors) == 0:
@@ -412,20 +483,20 @@ class MoveToPointNode(Node):
                     self.get_logger().error(traceback.format_exc())
                     return action_error_callback(
                             f"Error executing the motion generator: {e}",
-                        MoveToPoint.Result.STATUS_FAILURE,
+                        MoveGripperToPoint.Result.STATUS_FAILURE,
                     )
 
             # Sleep
             rate.sleep()
         
-        # Failed to execute MoveToPoint
-        return action_error_callback("Failed to execute MoveToPoint")
+        # Failed to execute MoveGripperToPoint
+        return action_error_callback("Failed to execute MoveGripperToPoint")
 
 
 def main(args: Optional[List[str]] = None):
     rclpy.init(args=args)
 
-    move_to_point = MoveToPointNode()
+    move_to_point = MoveGripperToPointNode()
     move_to_point.get_logger().info("Created!")
 
     # Use a MultiThreadedExecutor so that subscriptions, actions, etc. can be

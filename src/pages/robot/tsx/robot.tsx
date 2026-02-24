@@ -10,7 +10,8 @@ import {
     ActionState,
     ActionStatusList,
     ROSBatteryState,
-    MoveToPointActionFeedback,
+    MoveBaseToPointActionFeedback,
+    MoveGripperToPointActionFeedback,
 } from "shared/util";
 import {
     rosJointStatetoRobotPose,
@@ -25,7 +26,8 @@ export var rosConnected = false;
 // Names of ROS actions
 const moveBaseActionName = "/navigate_to_pose";
 const moveToPregraspActionName = "/move_to_pregrasp";
-const moveToPointActionName = "/move_to_point";
+const moveBaseToPointActionName = "/move_base_to_point";
+const moveGripperToPointActionName = "/move_gripper_to_point";
 const showTabletActionName = "/show_tablet";
 
 export class Robot extends React.Component {
@@ -42,10 +44,12 @@ export class Robot extends React.Component {
     private trajectoryClient?: ROSLIB.ActionClient;
     private moveBaseClient?: ROSLIB.ActionClient;
     private moveToPregraspGoal?: ROSLIB.ActionGoal;
-    private moveToPointGoal?: ROSLIB.ActionGoal;
+    private moveBaseToPointGoal?: ROSLIB.ActionGoal;
+    private moveGripperToPointGoal?: ROSLIB.ActionGoal;
     private showTabletGoal?: ROSLIB.ActionGoal;
     private moveToPregraspClient?: ROSLIB.ActionClient;
-    private moveToPointClient?: ROSLIB.ActionClient;
+    private moveBaseToPointClient?: ROSLIB.ActionClient;
+    private moveGripperToPointClient?: ROSLIB.ActionClient;
     private showTabletClient?: ROSLIB.ActionClient;
     private cmdVelTopic?: ROSLIB.Topic;
     private switchToNavigationService?: ROSLIB.Service;
@@ -72,9 +76,13 @@ export class Robot extends React.Component {
     private occupancyGridCallback: (occupancyGrid: ROSOccupancyGrid) => void;
     private moveBaseResultCallback: (goalState: ActionState) => void;
     private moveToPregraspResultCallback: (goalState: ActionState) => void;
-    private moveToPointResultCallback: (goalState: ActionState) => void;
-    private moveToPointFeedbackCallback: (
-        feedback: MoveToPointActionFeedback
+    private moveBaseToPointResultCallback: (goalState: ActionState) => void;
+    private moveGripperToPointResultCallback: (goalState: ActionState) => void;
+    private moveBaseToPointFeedbackCallback: (
+        feedback: MoveBaseToPointActionFeedback
+    ) => void;
+    private moveGripperToPointFeedbackCallback: (
+        feedback: MoveGripperToPointActionFeedback
     ) => void;
     private showTabletResultCallback: (goalState: ActionState) => void;
     private amclPoseCallback: (pose: ROSLIB.Transform) => void;
@@ -100,9 +108,13 @@ export class Robot extends React.Component {
         occupancyGridCallback: (occupancyGrid: ROSOccupancyGrid) => void;
         moveBaseResultCallback: (goalState: ActionState) => void;
         moveToPregraspResultCallback: (goalState: ActionState) => void;
-        moveToPointResultCallback: (goalState: ActionState) => void;
-        moveToPointFeedbackCallback: (
-            feedback: MoveToPointActionFeedback
+        moveBaseToPointResultCallback: (goalState: ActionState) => void;
+        moveGripperToPointResultCallback: (goalState: ActionState) => void;
+        moveBaseToPointFeedbackCallback: (
+            feedback: MoveBaseToPointActionFeedback
+        ) => void;
+        moveGripperToPointFeedbackCallback: (
+            feedback: MoveGripperToPointActionFeedback
         ) => void;
         showTabletResultCallback: (goalState: ActionState) => void;
         amclPoseCallback: (pose: ROSLIB.Transform) => void;
@@ -118,8 +130,14 @@ export class Robot extends React.Component {
         this.occupancyGridCallback = props.occupancyGridCallback;
         this.moveBaseResultCallback = props.moveBaseResultCallback;
         this.moveToPregraspResultCallback = props.moveToPregraspResultCallback;
-        this.moveToPointResultCallback = props.moveToPointResultCallback;
-        this.moveToPointFeedbackCallback = props.moveToPointFeedbackCallback;
+        this.moveBaseToPointResultCallback =
+            props.moveBaseToPointResultCallback;
+        this.moveGripperToPointResultCallback =
+            props.moveGripperToPointResultCallback;
+        this.moveBaseToPointFeedbackCallback =
+            props.moveBaseToPointFeedbackCallback;
+        this.moveGripperToPointFeedbackCallback =
+            props.moveGripperToPointFeedbackCallback;
         this.showTabletResultCallback = props.showTabletResultCallback;
         this.amclPoseCallback = props.amclPoseCallback;
         this.modeCallback = props.modeCallback;
@@ -290,11 +308,18 @@ export class Robot extends React.Component {
             "Move To Pre-grasp failed!"
         );
         this.subscribeToActionResult(
-            moveToPointActionName,
-            this.moveToPointResultCallback,
-            "Move To Point canceled!",
-            "Move To Point succeeded!",
-            "Move To Point failed!"
+            moveBaseToPointActionName,
+            this.moveBaseToPointResultCallback,
+            "Move-Base-To-Point canceled!",
+            "Move-Base-To-Point succeeded!",
+            "Move-Base-To-Point failed!"
+        );
+        this.subscribeToActionResult(
+            moveGripperToPointActionName,
+            this.moveGripperToPointResultCallback,
+            "Move-Gripper-To-Point canceled!",
+            "Move-Gripper-To-Point succeeded!",
+            "Move-Gripper-To-Point failed!"
         );
         this.subscribeToActionResult(
             showTabletActionName,
@@ -304,10 +329,19 @@ export class Robot extends React.Component {
             "Show Tablet failed!"
         );
         this.subscribeToActionFeedback(moveToPregraspActionName, null);
+        this.subscribeToActionFeedback(
+            moveBaseToPointActionName,
+            this.moveBaseToPointFeedbackCallback
+        );
+        this.subscribeToActionFeedback(
+            moveGripperToPointActionName,
+            this.moveGripperToPointFeedbackCallback
+        );
         this.createTrajectoryClient();
         this.createMoveBaseClient();
         this.createMoveToPregraspClient();
-        this.createMoveToPointClient();
+        this.createMoveBaseToPointClient();
+        this.createMoveGripperToPointClient();
         this.createShowTabletClient();
         this.createCmdVelTopic();
         this.createSwitchToNavigationService();
@@ -592,7 +626,6 @@ export class Robot extends React.Component {
         });
         this.subscriptions.push(actionFeedbackTopic);
 
-        console.log("##### Subscribing to action feedback", actionName);
         if (callback) {
             actionFeedbackTopic.subscribe(callback);
         }
@@ -623,11 +656,19 @@ export class Robot extends React.Component {
         });
     }
 
-    createMoveToPointClient() {
-        this.moveToPointClient = new ROSLIB.ActionHandle({
+    createMoveBaseToPointClient() {
+        this.moveBaseToPointClient = new ROSLIB.ActionHandle({
             ros: this.ros,
-            name: moveToPointActionName,
-            actionType: "nrc_web_teleop/action/MoveToPoint",
+            name: moveBaseToPointActionName,
+            actionType: "nrc_web_teleop/action/MoveBaseToPoint",
+        });
+    }
+
+    createMoveGripperToPointClient() {
+        this.moveGripperToPointClient = new ROSLIB.ActionHandle({
+            ros: this.ros,
+            name: moveGripperToPointActionName,
+            actionType: "nrc_web_teleop/action/MoveGripperToPoint",
         });
     }
 
@@ -1010,8 +1051,9 @@ export class Robot extends React.Component {
         return newGoal;
     }
 
-    makeMoveToPointGoal(scaled_x: number, scaled_y: number) {
-        if (!this.moveToPointClient) throw "moveToPointClient is undefined";
+    makeScaledXYToPointGoal(scaled_x: number, scaled_y: number) {
+        if (!this.moveBaseToPointClient)
+            throw "moveBaseToPointClient is undefined";
 
         let newGoal = new ROSLIB.ActionGoal({
             scaled_u: scaled_x,
@@ -1159,7 +1201,8 @@ export class Robot extends React.Component {
     stopAutonomousClients() {
         this.stopMoveBaseClient();
         this.stopMoveToPregraspClient();
-        this.stopMoveToPointClient();
+        this.stopMoveBaseToPointClient();
+        this.stopMoveGripperToPointClient();
         this.stopShowTabletClient();
     }
 
@@ -1228,19 +1271,23 @@ export class Robot extends React.Component {
      * @param x The x coordinate of the click on the Overhead camera
      * @param y The y coordinate of the click on the Overhead camera
      */
-    executeMoveToPointGoal(scaled_x?: number, scaled_y?: number) {
+    executeMoveBaseToPointGoal(scaled_x?: number, scaled_y?: number) {
         if (scaled_x === undefined || scaled_y === undefined) {
             return;
         }
-        this.moveToPointGoal = this.makeMoveToPointGoal(scaled_x, scaled_y);
-        this.moveToPointClient.createClient(
-            this.moveToPointGoal,
+        this.moveBaseToPointGoal = this.makeScaledXYToPointGoal(
+            scaled_x,
+            scaled_y
+        );
+        this.moveBaseToPointClient.createClient(
+            this.moveBaseToPointGoal,
             null, // no result callback
             (message) => {
                 if (
                     message.op === "action_response" &&
                     message.response_type === "feedback"
                 ) {
+<<<<<<< HEAD
                     const { new_scaled_x, new_scaled_y } =
                         message.values.feedback;
                     if (new_scaled_x && new_scaled_y) {
@@ -1250,6 +1297,13 @@ export class Robot extends React.Component {
                                 new_scaled_y: new_scaled_y,
                             });
                         }
+=======
+                    if (this.moveBaseToPointFeedbackCallback) {
+                        this.moveBaseToPointFeedbackCallback({
+                            new_scaled_x: message.values.feedback.new_scaled_x,
+                            new_scaled_y: message.values.feedback.new_scaled_y,
+                        });
+>>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
                     }
                 }
             }
@@ -1259,11 +1313,50 @@ export class Robot extends React.Component {
         robotMode = "unknown";
     }
 
-    stopMoveToPointClient() {
-        if (!this.moveToPointClient) throw "moveToPointClient is undefined";
-        if (this.moveToPointGoal) {
-            this.moveToPointClient.cancelGoal();
-            this.moveToPointGoal = undefined;
+    stopMoveBaseToPointClient() {
+        if (!this.moveBaseToPointClient)
+            throw "moveBaseToPointClient is undefined";
+        if (this.moveBaseToPointGoal) {
+            this.moveBaseToPointClient.cancelGoal();
+            this.moveBaseToPointGoal = undefined;
+        }
+    }
+    executeMoveGripperToPointGoal(scaled_x?: number, scaled_y?: number) {
+        if (scaled_x === undefined || scaled_y === undefined) {
+            return;
+        }
+        this.moveGripperToPointGoal = this.makeScaledXYToPointGoal(
+            scaled_x,
+            scaled_y
+        );
+        this.moveGripperToPointClient.createClient(
+            this.moveGripperToPointGoal,
+            null, // no result callback
+            (message) => {
+                if (
+                    message.op === "action_response" &&
+                    message.response_type === "feedback"
+                ) {
+                    if (this.moveGripperToPointFeedbackCallback) {
+                        this.moveGripperToPointFeedbackCallback({
+                            new_scaled_x: message.values.feedback.new_scaled_x,
+                            new_scaled_y: message.values.feedback.new_scaled_y,
+                        });
+                    }
+                }
+            }
+        );
+
+        // An autonomous client may change the robot's mode.
+        robotMode = "unknown";
+    }
+
+    stopMoveGripperToPointClient() {
+        if (!this.moveGripperToPointClient)
+            throw "moveGripperToPointClient is undefined";
+        if (this.moveGripperToPointGoal) {
+            this.moveGripperToPointClient.cancelGoal();
+            this.moveGripperToPointGoal = undefined;
         }
     }
 

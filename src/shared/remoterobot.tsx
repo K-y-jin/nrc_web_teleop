@@ -13,7 +13,10 @@ import {
     GetOccupancyGrid,
     MoveBaseCommand,
     MoveToPregraspCommand,
-    MoveToPointCommand,
+    MoveBaseToPointCommand,
+    StopMoveBaseToPointCommand,
+    MoveGripperToPointCommand,
+    StopMoveGripperToPointCommand,
     PlaybackPosesCommand,
     PlayTextToSpeech,
     StopTextToSpeech,
@@ -166,9 +169,18 @@ export class RemoteRobot extends React.Component<{}, any> {
         this.robotChannel(cmd);
     }
 
-    moveToPoint(scaled_x: number, scaled_y: number) {
-        let cmd: MoveToPointCommand = {
-            type: "moveToPoint",
+    moveBaseToPoint(scaled_x: number, scaled_y: number) {
+        let cmd: MoveBaseToPointCommand = {
+            type: "moveBaseToPoint",
+            scaled_x: scaled_x,
+            scaled_y: scaled_y,
+        };
+        this.robotChannel(cmd);
+    }
+
+    moveGripperToPoint(scaled_x: number, scaled_y: number) {
+        let cmd: MoveGripperToPointCommand = {
+            type: "moveGripperToPoint",
             scaled_x: scaled_x,
             scaled_y: scaled_y,
         };
@@ -244,8 +256,15 @@ export class RemoteRobot extends React.Component<{}, any> {
         this.robotChannel({ type: "stopMoveToPregrasp" });
     }
 
-    stopMoveToPoint() {
-        this.robotChannel({ type: "stopMoveToPoint" });
+    stopMoveBaseToPoint() {
+        this.robotChannel({ type: "stopMoveBaseToPoint" });
+    }
+
+    stopMoveGripperToPoint() {
+        let cmd: StopMoveGripperToPointCommand = {
+            type: "stopMoveGripperToPoint",
+        };
+        this.robotChannel(cmd);
     }
 
     stopShowTablet() {

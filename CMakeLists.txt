@@ -20,7 +20,8 @@ find_package(rosidl_default_generators REQUIRED)
 ##############################
 rosidl_generate_interfaces(${PROJECT_NAME}
   "action/MoveToPregrasp.action"
-  "action/MoveToPoint.action"
+  "action/MoveBaseToPoint.action"
+  "action/MoveGripperToPoint.action"
   "msg/TextToSpeech.msg"
   DEPENDENCIES geometry_msgs
 )
@@ -40,7 +41,8 @@ ament_python_install_package(${PROJECT_NAME}_helpers)
 install(PROGRAMS
   nodes/compressed_image_visualizer.py
   nodes/configure_video_streams.py
-  nodes/move_to_point.py
+  nodes/move_base_to_point.py
+  nodes/move_gripper_to_point.py
   nodes/move_to_pregrasp.py
   nodes/navigation_camera.py
   nodes/text_to_speech.py

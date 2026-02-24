@@ -6,7 +6,7 @@ import sys
 import threading
 from typing import Dict, Union
 
-import cv2
+import cv2, os
 import numpy as np
 import numpy.typing as npt
 import pcl
@@ -312,6 +312,7 @@ class ConfigureVideoStreams(Node):
             self.realsense_depth_ar_service = self.create_service(
                 SetBool, "realsense_depth_ar", self.realsense_depth_ar_callback
             )
+            self.save_depth = False
             self.realsense_depth_ar = False
             self.realsense_body_pose_ar_service = self.create_service(
                 SetBool, "realsense_body_pose_ar", self.realsense_body_pose_ar_callback
@@ -559,6 +560,7 @@ class ConfigureVideoStreams(Node):
     def realsense_depth_ar_callback(self, req, res):
         self.get_logger().info(f"Realsense depth AR service: {req.data}")
         self.realsense_depth_ar = req.data
+        self.save_depth = req.data
         res.success = True
         return res
 
@@ -571,6 +573,7 @@ class ConfigureVideoStreams(Node):
     def gripper_depth_ar_callback(self, req, res):
         self.get_logger().info(f"Gripper depth AR service: {req.data}")
         self.gripper_depth_ar = req.data
+        self.save_depth = req.data
         res.success = True
         return res
 
@@ -735,7 +738,11 @@ class ConfigureVideoStreams(Node):
             if self.realsense_depth_ar:
                 with self.latest_realsense_depth_image_lock:
                     depth_msg = self.latest_realsense_depth_image
-                image = self.overlay_realsense_depth_ar(depth_msg, image)
+                if self.save_depth:
+                    self.get_logger().info(f"깊이 이미지 저장!")
+                    self.save_depth_img(depth_msg, image)
+                else:
+                    image = self.overlay_realsense_depth_ar(depth_msg, image)
             if self.realsense_body_pose_ar:
                 with self.latest_body_landmarks_str_lock:
                     body_landmarks_str = self.latest_body_landmarks_str
@@ -809,7 +816,11 @@ class ConfigureVideoStreams(Node):
             with self.latest_gripper_realsense_depth_image_lock:
                 depth_msg = self.latest_gripper_realsense_depth_image
             if depth_msg is not None:
-                image = self.overlay_gripper_depth_ar(image, depth_msg)
+                if self.save_depth:
+                    self.get_logger().info(f"그리퍼 깊이 이미지 저장!")
+                    self.save_depth_img(depth_msg, image, 0.07, 0.50)
+                else:
+                    image = self.overlay_gripper_depth_ar(image, depth_msg)
 
         if self.expanded_gripper:
             # Compute and publish the expanded gripper image
@@ -1044,6 +1055,67 @@ class ConfigureVideoStreams(Node):
         msg = cv2_image_to_ros_msg(image, compress=True, bridge=self.cv_bridge)
         msg.header.stamp = header.stamp
         publisher.publish(msg)
+
+    def save_depth_img(
+            self, depth_msg: Union[CompressedImage, Image, PointCloud2], img: npt.NDArray[np.uint8], z_min: float = 0.3, z_max: float = 3.0,
+        ):
+
+        if not os.path.exists('output'):
+            os.makedirs('output')
+        filename_depth = 'output/depth_1.png'
+        filename_rgb = 'output/frame_1.png'
+        i = 1
+        
+
+        while os.path.exists(filename_depth) or os.path.exists(filename_rgb):
+            filename_depth = f'output/depth_{i}.png'
+            filename_rgb = f'output/frame_{i}.png'
+            i += 1
+
+        # -----------------
+        # Depth 처리
+        # D435 30 cm 이상부터 측정 가능. 최대 3 m
+        # D405 7 cm 이상부터 측정 가능. 최대 50 cm
+        # -----------------
+        if isinstance(depth_msg, (CompressedImage, Image)):
+            depth_image = ros_msg_to_cv2_image(depth_msg, self.cvBridge)
+
+            if depth_image.dtype == np.float32:
+                depth_image = np.nan_to_num(depth_image)
+                depth_image = (depth_image * 1000.0).astype(np.uint16)
+
+        else:
+            pc = ros2_numpy.point_cloud2.pointcloud2_to_array(depth_msg)
+            depth_image = pc['z']  # z = depth (meter)
+            depth_image = np.nan_to_num(depth_image, nan=0.3)
+            # Filter by points that are within z_dist=1.5 m of the camera.
+            # self.get_logger().info(f"Image shape: {img.shape}")
+            self.get_logger().info(f"Depth image min: {np.min(depth_image)}, max: {np.max(depth_image)}")
+            if depth_image.shape[0] != img.shape[0]*img.shape[1]:
+
+                self.get_logger().warn(
+                    f"Depth image shape {depth_image.shape} does not match RGB image shape {img.shape[:2]}. Reshaping depth image to match RGB image shape."
+                )
+            else:
+                depth_image = depth_image.reshape(img.shape[0], img.shape[1])
+                depth_image = (depth_image - z_min)/(z_max - z_min)*65535.0
+                depth_image = np.clip(depth_image, 0, 65535)
+                depth_image = depth_image.astype(np.uint16)
+                # depth_image = (depth_image / z_dist* 65535.0).astype(np.uint16)
+                self.get_logger().info(f"# Depth image min: {np.min(depth_image)}, max: {np.max(depth_image)}")
+
+                cv2.imwrite(filename_depth, depth_image)
+
+                # -----------------
+                # RGB 저장
+                # -----------------
+                if img is not None:
+                    cv2.imwrite(filename_rgb, img)
+                else:
+                    self.get_logger().warn("RGB frame not available.")
+
+                self.get_logger().info(f"Saved depth to {filename_depth} and frame to {filename_rgb}")
+                self.save_depth = False
 
     def run(self):
         rate = self.create_rate(self.target_fps)

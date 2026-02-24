@@ -1,0 +1,29 @@
+[33mcommit cff58ba5bffb7a361dc94a87680e234c4149ff9b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmove2node[m[33m)[m
+Author: K-y-jin <kjintwo@gmail.com>
+Date:   Tue Feb 24 10:50:45 2026 +0900
+
+    Add Buttons for Move Base and Gripper To Point
+
+[33mcommit ff6953c45ac7c54d45181d94c9b311e8eea2e928[m
+Author: K-y-jin <kjintwo@gmail.com>
+Date:   Fri Jan 16 13:55:48 2026 +0900
+
+    Describe changes in move2node
+
+[33mcommit 0c8fbae5f7aa76758ebdfe4f23322cd4406c902c[m
+Author: K-y-jin <kjintwo@gmail.com>
+Date:   Tue Oct 28 13:36:17 2025 +0900
+
+    move2point_ver2
+
+[33mcommit e5e47db2221408fcc7dd6aae93fd416c8aa4a944[m
+Author: K-y-jin <kjintwo@gmail.com>
+Date:   Fri Oct 24 13:06:47 2025 +0900
+
+    move2point_ver1
+
+[33mcommit bc92d5e58ac6c72713b9181fcfa0355c59d1b818[m
+Author: K-y-jin <kjintwo@gmail.com>
+Date:   Thu Oct 23 13:19:16 2025 +0900
+
+    Initial commit

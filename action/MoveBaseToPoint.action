@@ -1,4 +1,4 @@
-# MoveToPoint takes in the scaled (u,v) coordinates of a click on the Wide-Angle camera.
+# MoveBaseToPoint takes in the scaled (u,v) coordinates of a click on the Wide-Angle camera.
 # It then move the robot to the selected location, giving feedback on the way.
 
 # These should be in the range [0.0, 1.0]

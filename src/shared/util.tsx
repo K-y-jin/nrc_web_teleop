@@ -119,7 +119,8 @@ export type WebRTCMessage =
     | StretchToolMessage
     | GoalStatusMessage
     | ActionStateMessage
-    | MoveToPointActionFeedbackMessage
+    | MoveBaseToPointActionFeedbackMessage
+    | MoveGripperToPointActionFeedbackMessage
     | cmd;
 
 interface StopTrajectoryMessage {
@@ -198,17 +199,28 @@ export interface ActionStateMessage {
     type:
         | "moveBaseState"
         | "moveToPregraspState"
-        | "moveToPointState"
+        | "moveBaseToPointState"
+        | "moveGripperToPointState"
         | "showTabletState";
     message: ActionState;
 }
 
-export interface MoveToPointActionFeedbackMessage {
-    type: "moveToPointActionFeedback";
-    message: MoveToPointActionFeedback;
+export interface MoveBaseToPointActionFeedbackMessage {
+    type: "moveBaseToPointActionFeedback";
+    message: MoveBaseToPointActionFeedback;
 }
 
-export interface MoveToPointActionFeedback {
+export interface MoveBaseToPointActionFeedback {
+    new_scaled_x: number;
+    new_scaled_y: number;
+}
+
+export interface MoveGripperToPointActionFeedbackMessage {
+    type: "moveGripperToPointActionFeedback";
+    message: MoveGripperToPointActionFeedback;
+}
+
+export interface MoveGripperToPointActionFeedback {
     new_scaled_x: number;
     new_scaled_y: number;
 }

@@ -13,7 +13,8 @@ import {
     TABLET_ORIENTATION_LANDSCAPE,
     TABLET_ORIENTATION_PORTRAIT,
     StretchTool,
-    MoveToPointActionFeedback,
+    MoveBaseToPointActionFeedback,
+    MoveGripperToPointActionFeedback,
 } from "../../../../shared/util";
 import { stretchTool } from "..";
 
@@ -34,9 +35,18 @@ export enum UnderVideoButton {
     StartMoveToPregraspVertical = "Gripper Vertical",
     CancelMoveToPregrasp = "Cancel Goal",
     MoveToPregraspGoalReached = "Goal Reached",
+<<<<<<< HEAD
     StartMoveToPoint = "Start Moving ",
     CancelMoveToPoint = "Cancel Goal",
     MoveToPointGoalReached = "Goal Reached",
+=======
+    StartMoveBaseToPoint = "Start MoveBaseToPoint",
+    CancelMoveBaseToPoint = "Cancel MoveBaseToPoint",
+    MoveBaseToPointGoalReached = "MoveBaseToPoint Goal Reached",
+    StartMoveGripperToPoint = "Start MoveGripperToPoint",
+    CancelMoveGripperToPoint = "Cancel MoveGripperToPoint",
+    MoveGripperToPointGoalReached = "MoveGripperToPoint Goal Reached",
+>>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
     ToggleTabletOrientation = "Toggle Tablet Orientation",
     GetTabletOrientation = "Get Tablet Orientation",
     RealsenseBodyPoseEstimate = "Show Body Pose",
@@ -107,7 +117,10 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
      * Callback function to update the move base state in the operator
      * interface (e.g., show alerts).
      */
-    private moveToPointOperatorCallback?: (state: ActionState) => void =
+    private moveBaseToPointOperatorCallback?: (state: ActionState) => void =
+        undefined;
+
+    private moveGripperToPointOperatorCallback?: (state: ActionState) => void =
         undefined;
     /**
      * CAllback function to update the show tablet state in the operator
@@ -127,9 +140,13 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
      */
     private lastMoveToPregraspStateTimestamp: number = 0;
     /**
-     * Store the timestamp at which the last moveToPoint state was received
+     * Store the timestamp at which the last moveBaseToPoint state was received
      */
-    private lastMoveToPointStateTimestamp: number = 0;
+    private lastMoveBaseToPointStateTimestamp: number = 0;
+    /**
+     * Store the timestamp at which the last moveGripperToPoint state was received
+     */
+    private lastMoveGripperToPointStateTimestamp: number = 0;
     /**
      * Store the timestamp at which the last showTablet state was received
      */
@@ -148,17 +165,40 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
      * Called when a response is received from the robot for the move to point.
      * @param state the move to point state to set
      */
-    public setMoveToPointState(state: ActionState) {
-        this.lastMoveToPointStateTimestamp = Date.now();
-        if (this.moveToPointOperatorCallback)
-            this.moveToPointOperatorCallback(state);
+    public setMoveBaseToPointState(state: ActionState) {
+        this.lastMoveBaseToPointStateTimestamp = Date.now();
+        if (this.moveBaseToPointOperatorCallback)
+            this.moveBaseToPointOperatorCallback(state);
     }
 
+<<<<<<< HEAD
     /**
      * Called when a response is received from the robot for the move to point action feedback.
      * @param feedback the move to point action feedback to set
      */
     public setMoveToPointActionFeedback(feedback: MoveToPointActionFeedback) {
+=======
+    public setMoveGripperToPointState(state: ActionState) {
+        this.lastMoveGripperToPointStateTimestamp = Date.now();
+        if (this.moveGripperToPointOperatorCallback)
+            this.moveGripperToPointOperatorCallback(state);
+    }
+
+    public handleMoveBaseToPointActionFeedback(
+        feedback: MoveBaseToPointActionFeedback
+    ) {
+        if (this.selectedLocationScaledXYCallback) {
+            this.selectedLocationScaledXYCallback([
+                feedback.new_scaled_x,
+                feedback.new_scaled_y,
+            ]);
+        }
+    }
+
+    public handleMoveGripperToPointActionFeedback(
+        feedback: MoveGripperToPointActionFeedback
+    ) {
+>>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
         if (this.selectedLocationScaledXYCallback) {
             this.selectedLocationScaledXYCallback([
                 feedback.new_scaled_x,
@@ -291,20 +331,20 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
                     onClick: () =>
                         FunctionProvider.remoteRobot?.stopMoveToPregrasp(),
                 };
-            case UnderVideoButton.StartMoveToPoint:
+            case UnderVideoButton.StartMoveBaseToPoint:
                 return {
                     onClick: (scaledXY: [number, number] | null) => {
                         if (!scaledXY) {
                             console.log("No scaledXY");
                             return;
                         }
-                        FunctionProvider.remoteRobot?.moveToPoint(
+                        FunctionProvider.remoteRobot?.moveBaseToPoint(
                             scaledXY[0],
                             scaledXY[1]
                         );
                     },
                 };
-            case UnderVideoButton.MoveToPointGoalReached:
+            case UnderVideoButton.MoveBaseToPointGoalReached:
                 // TODO: Add timeouts to this and the other GoalReached promises!
                 return {
                     getFuture: () => {
@@ -313,7 +353,7 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
                         const promise = new Promise((resolve, reject) => {
                             let interval = setInterval(() => {
                                 let goalReached =
-                                    that.lastMoveToPointStateTimestamp >
+                                    that.lastMoveBaseToPointStateTimestamp >
                                     currentTimestamp;
                                 if (goalReached) {
                                     clearInterval(interval);
@@ -324,11 +364,35 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
                         return promise;
                     },
                 };
-            case UnderVideoButton.CancelMoveToPoint:
+            case UnderVideoButton.CancelMoveBaseToPoint:
                 return {
                     onClick: () =>
-                        FunctionProvider.remoteRobot?.stopMoveToPoint(),
+                        FunctionProvider.remoteRobot?.stopMoveBaseToPoint(),
                 };
+<<<<<<< HEAD
+=======
+            case UnderVideoButton.StartMoveGripperToPoint:
+                return {
+                    onClick: (scaledXY: [number, number] | null) => {
+                        if (!scaledXY) {
+                            console.log("No scaledXY");
+                            return;
+                        }
+                        FunctionProvider.remoteRobot?.moveGripperToPoint(
+                            scaledXY[0],
+                            scaledXY[1]
+                        );
+                    },
+                };
+            case UnderVideoButton.MoveGripperToPointGoalReached:
+                return {};
+            case UnderVideoButton.CancelMoveGripperToPoint:
+                // TODO:
+                return {
+                    onClick: () =>
+                        FunctionProvider.remoteRobot?.stopMoveGripperToPoint(),
+                };
+>>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
             case UnderVideoButton.ToggleArucoMarkers:
                 return {
                     onCheck: (toggle: boolean) =>
@@ -465,10 +529,16 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
      *
      * @param callback operator's callback function to update move to point state
      */
-    public setMoveToPointOperatorCallback(
+    public setMoveBaseToPointOperatorCallback(
         callback: (state: ActionState) => void
     ) {
-        this.moveToPointOperatorCallback = callback;
+        this.moveBaseToPointOperatorCallback = callback;
+    }
+
+    public setMoveGripperToPointOperatorCallback(
+        callback: (state: ActionState) => void
+    ) {
+        this.moveGripperToPointOperatorCallback = callback;
     }
 
     /**

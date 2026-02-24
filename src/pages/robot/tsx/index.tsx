@@ -24,8 +24,10 @@ import {
     ROSBatteryState,
     BatteryVoltageMessage,
     delay,
-    MoveToPointActionFeedback,
-    MoveToPointActionFeedbackMessage,
+    MoveBaseToPointActionFeedback,
+    MoveBaseToPointActionFeedbackMessage,
+    MoveGripperToPointActionFeedback,
+    MoveGripperToPointActionFeedbackMessage,
 } from "shared/util";
 import { AllVideoStreamComponent, VideoStream } from "./videostreams";
 import { AudioStream } from "./audiostreams";
@@ -44,9 +46,12 @@ export const robot = new Robot({
         forwardActionState(goalState, "moveBaseState"),
     moveToPregraspResultCallback: (goalState: ActionState) =>
         forwardActionState(goalState, "moveToPregraspState"),
-    moveToPointResultCallback: (goalState: ActionState) =>
-        forwardActionState(goalState, "moveToPointState"),
-    moveToPointFeedbackCallback: forwardMoveToPointActionFeedback,
+    moveBaseToPointResultCallback: (goalState: ActionState) =>
+        forwardActionState(goalState, "moveBaseToPointState"),
+    moveBaseToPointFeedbackCallback: forwardMoveBaseToPointActionFeedback,
+    moveGripperToPointResultCallback: (goalState: ActionState) =>
+        forwardActionState(goalState, "moveGripperToPointState"),
+    moveGripperToPointFeedbackCallback: forwardMoveGripperToPointActionFeedback,
     showTabletResultCallback: (goalState: ActionState) =>
         forwardActionState(goalState, "showTabletState"),
     amclPoseCallback: forwardAMCLPose,
@@ -155,14 +160,30 @@ function forwardActionState(state: ActionState, type: string) {
     } as ActionStateMessage);
 }
 
-function forwardMoveToPointActionFeedback(feedback: MoveToPointActionFeedback) {
+function forwardMoveBaseToPointActionFeedback(
+    feedback: MoveBaseToPointActionFeedback
+) {
     if (!connection) throw "WebRTC connection undefined!";
 
+<<<<<<< HEAD
     // console.log("##### ToPointActionFeedback", feedback);
+=======
+>>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
     connection.sendData({
-        type: "moveToPointActionFeedback",
+        type: "moveBaseToPointActionFeedback",
         message: feedback,
-    } as MoveToPointActionFeedbackMessage);
+    } as MoveBaseToPointActionFeedbackMessage);
+}
+
+function forwardMoveGripperToPointActionFeedback(
+    feedback: MoveGripperToPointActionFeedback
+) {
+    if (!connection) throw "WebRTC connection undefined!";
+
+    connection.sendData({
+        type: "moveGripperToPointActionFeedback",
+        message: feedback,
+    } as MoveGripperToPointActionFeedbackMessage);
 }
 
 function forwardMode(mode: string) {
@@ -344,11 +365,23 @@ function handleMessage(message: WebRTCMessage) {
         case "stopMoveToPregrasp":
             robot.stopMoveToPregraspClient();
             break;
-        case "moveToPoint":
-            robot.executeMoveToPointGoal(message.scaled_x, message.scaled_y);
+        case "moveBaseToPoint":
+            robot.executeMoveBaseToPointGoal(
+                message.scaled_x,
+                message.scaled_y
+            );
             break;
-        case "stopMoveToPoint":
-            robot.stopMoveToPointClient();
+        case "stopMoveBaseToPoint":
+            robot.stopMoveBaseToPointClient();
+            break;
+        case "moveGripperToPoint":
+            robot.executeMoveGripperToPointGoal(
+                message.scaled_x,
+                message.scaled_y
+            );
+            break;
+        case "stopMoveGripperToPoint":
+            robot.stopMoveGripperToPointClient();
             break;
         case "getStretchTool":
             robot.getStretchTool();

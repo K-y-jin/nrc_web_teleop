@@ -64,7 +64,9 @@ export const Operator = (props: {
     const [moveBaseState, setMoveBaseState] = React.useState<ActionState>();
     const [moveToPregraspState, setMoveToPregraspState] =
         React.useState<ActionState>();
-    const [moveToPointState, setMoveToPointState] =
+    const [moveBaseToPointState, setMoveBaseToPointState] =
+        React.useState<ActionState>();
+    const [moveGripperToPointState, setMoveGripperToPointState] =
         React.useState<ActionState>();
     const [showTabletState, setShowTabletState] =
         React.useState<ActionState>(false);
@@ -140,22 +142,50 @@ export const Operator = (props: {
 
     // Callback for when the move to point state is updated (e.g., the ROS2 action returns)
     // Used to render alerts to the operator.
-    function moveToPointStateCallback(state: ActionState) {
-        setMoveToPointState(state);
+    function moveBaseToPointStateCallback(state: ActionState) {
+        setMoveBaseToPointState(state);
     }
-    underVideoFunctionProvider.setMoveToPointOperatorCallback(
-        moveToPointStateCallback
+    underVideoFunctionProvider.setMoveBaseToPointOperatorCallback(
+        moveBaseToPointStateCallback
     );
-    let moveToPointAlertTimeout: NodeJS.Timeout;
+    let moveBaseToPointAlertTimeout: NodeJS.Timeout;
     React.useEffect(() => {
+<<<<<<< HEAD
         if (moveToPointState && moveToPointState.alert_type != "info") {
             if (moveToPointAlertTimeout)
                 clearTimeout(moveToPointAlertTimeout);
             moveToPointAlertTimeout = setTimeout(() => {
                 setMoveToPointState(undefined);
+=======
+        if (moveBaseToPointState && moveBaseToPointState.alert_type != "info") {
+            if (moveBaseToPointAlertTimeout)
+                clearTimeout(moveBaseToPointAlertTimeout);
+            moveBaseToPointAlertTimeout = setTimeout(() => {
+                setMoveBaseToPointState(undefined);
+>>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
             }, 5000);
         }
-    }, [moveToPointState]);
+    }, [moveBaseToPointState]);
+
+    function moveGripperToPointStateCallback(state: ActionState) {
+        setMoveGripperToPointState(state);
+    }
+    underVideoFunctionProvider.setMoveGripperToPointOperatorCallback(
+        moveGripperToPointStateCallback
+    );
+    let moveGripperToPointAlertTimeout: NodeJS.Timeout;
+    React.useEffect(() => {
+        if (
+            moveGripperToPointState &&
+            moveGripperToPointState.alert_type != "info"
+        ) {
+            if (moveGripperToPointAlertTimeout)
+                clearTimeout(moveGripperToPointAlertTimeout);
+            moveGripperToPointAlertTimeout = setTimeout(() => {
+                setMoveGripperToPointState(undefined);
+            }, 5000);
+        }
+    }, [moveGripperToPointState]);
 
     // Callback for when the show tablet state is updated (e.g., the ROS2 action returns)
     // Used to render alerts to the operator.
@@ -435,17 +465,32 @@ export const Operator = (props: {
                     </div>
                 </div>
             )}
-            {moveToPointState && (
+            {moveBaseToPointState && (
                 <div className="operator-collision-alerts">
                     <div
                         className={className("operator-alert", {
-                            fadeIn: moveToPointState !== undefined,
-                            fadeOut: moveToPointState == undefined,
+                            fadeIn: moveBaseToPointState !== undefined,
+                            fadeOut: moveBaseToPointState == undefined,
                         })}
                     >
                         <Alert
-                            type={moveToPointState.alert_type}
-                            message={moveToPointState.state}
+                            type={moveBaseToPointState.alert_type}
+                            message={moveBaseToPointState.state}
+                        />
+                    </div>
+                </div>
+            )}
+            {moveGripperToPointState && (
+                <div className="operator-collision-alerts">
+                    <div
+                        className={className("operator-alert", {
+                            fadeIn: moveGripperToPointState !== undefined,
+                            fadeOut: moveGripperToPointState == undefined,
+                        })}
+                    >
+                        <Alert
+                            type={moveGripperToPointState.alert_type}
+                            message={moveGripperToPointState.state}
                         />
                     </div>
                 </div>

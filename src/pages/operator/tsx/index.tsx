@@ -209,13 +209,52 @@ function handleWebRTCMessage(message: WebRTCMessage | WebRTCMessage[]) {
             console.log("moveToPregraspState", message.message);
             underVideoFunctionProvider.setMoveToPregraspState(message.message);
             break;
-        case "moveToPointState":
-            console.log("moveToPointState", message.message);
-            underVideoFunctionProvider.setMoveToPointState(message.message);
+        case "moveBaseToPointState":
+            console.log("moveBaseToPointState", message.message);
+            underVideoFunctionProvider.setMoveBaseToPointState(message.message);
             break;
+<<<<<<< HEAD
         case "moveToPointActionFeedback":
             console.log("##### moveToPointActionFeedback", message.message);
             underVideoFunctionProvider.setMoveToPointActionFeedback(
+=======
+        case "moveGripperToPointState":
+            console.log("moveGripperToPointState", message.message);
+            underVideoFunctionProvider.setMoveGripperToPointState(
+                message.message
+            );
+            break;
+        case "moveBaseActionFeedback":
+            console.log("moveBaseActionFeedback", message.message);
+            underMapFunctionProvider.handleMoveBaseActionFeedback(
+                message.message
+            );
+            break;
+        case "moveToPregraspActionFeedback":
+            console.log(
+                "[Debug] moveToPregraspActionFeedback",
+                message.message
+            );
+            underVideoFunctionProvider.handleMoveToPregraspActionFeedback(
+                message.message
+            );
+            break;
+        case "moveBaseToPointActionFeedback":
+            console.log(
+                "[Debug] moveBaseToPointActionFeedback",
+                message.message
+            );
+            underVideoFunctionProvider.handleMoveBaseToPointActionFeedback(
+                message.message
+            );
+            break;
+        case "moveGripperToPointActionFeedback":
+            console.log(
+                "[Debug] moveGripperToPointActionFeedback",
+                message.message
+            );
+            underVideoFunctionProvider.handleMoveGripperToPointActionFeedback(
+>>>>>>> cff58ba (Add Buttons for Move Base and Gripper To Point)
                 message.message
             );
             break;
