@@ -1035,29 +1035,29 @@ export class Robot extends React.Component {
     }
 
     makeMoveToPregraspGoal(
-        scaled_x: number,
-        scaled_y: number,
+        scaled_u: number,
+        scaled_v: number,
         horizontal: boolean
     ) {
         if (!this.moveToPregraspClient)
             throw "moveToPregraspClient is undefined";
 
         let newGoal = new ROSLIB.ActionGoal({
-            scaled_u: scaled_x,
-            scaled_v: scaled_y,
+            scaled_u: scaled_u,
+            scaled_v: scaled_v,
             pregrasp_direction: horizontal ? 1 : 2,
         });
 
         return newGoal;
     }
 
-    makeScaledXYToPointGoal(scaled_x: number, scaled_y: number) {
+    makeScaledXYToPointGoal(scaled_u: number, scaled_v: number) {
         if (!this.moveBaseToPointClient)
             throw "moveBaseToPointClient is undefined";
 
         let newGoal = new ROSLIB.ActionGoal({
-            scaled_u: scaled_x,
-            scaled_v: scaled_y,
+            scaled_u: scaled_u,
+            scaled_v: scaled_v,
         });
 
         return newGoal;
@@ -1230,26 +1230,26 @@ export class Robot extends React.Component {
      * @param horizontal Whether the gripper should orient horizontally or vertically.
      */
     executeMoveToPregraspGoal(
-        scaled_x?: number,
-        scaled_y?: number,
+        scaled_u?: number,
+        scaled_v?: number,
         horizontal?: boolean
     ) {
         if (
-            scaled_x === undefined ||
-            scaled_y === undefined ||
+            scaled_u === undefined ||
+            scaled_v === undefined ||
             horizontal === undefined
         ) {
             return;
         }
         console.log(
             "Got move to pregrasp goal",
-            scaled_x,
-            scaled_y,
+            scaled_u,
+            scaled_v,
             horizontal
         );
         this.moveToPregraspGoal = this.makeMoveToPregraspGoal(
-            scaled_x,
-            scaled_y,
+            scaled_u,
+            scaled_v,
             horizontal
         );
         this.moveToPregraspClient.createClient(this.moveToPregraspGoal);
@@ -1271,13 +1271,13 @@ export class Robot extends React.Component {
      * @param x The x coordinate of the click on the Overhead camera
      * @param y The y coordinate of the click on the Overhead camera
      */
-    executeMoveBaseToPointGoal(scaled_x?: number, scaled_y?: number) {
-        if (scaled_x === undefined || scaled_y === undefined) {
+    executeMoveBaseToPointGoal(scaled_u?: number, scaled_v?: number) {
+        if (scaled_u === undefined || scaled_v === undefined) {
             return;
         }
         this.moveBaseToPointGoal = this.makeScaledXYToPointGoal(
-            scaled_x,
-            scaled_y
+            scaled_u,
+            scaled_v
         );
         this.moveBaseToPointClient.createClient(
             this.moveBaseToPointGoal,
@@ -1289,8 +1289,8 @@ export class Robot extends React.Component {
                 ) {
                     if (this.moveBaseToPointFeedbackCallback) {
                         this.moveBaseToPointFeedbackCallback({
-                            new_scaled_x: message.values.feedback.new_scaled_x,
-                            new_scaled_y: message.values.feedback.new_scaled_y,
+                            new_scaled_u: message.values.feedback.new_scaled_u,
+                            new_scaled_v: message.values.feedback.new_scaled_v,
                         });
                     }
                 }
@@ -1309,13 +1309,13 @@ export class Robot extends React.Component {
             this.moveBaseToPointGoal = undefined;
         }
     }
-    executeMoveGripperToPointGoal(scaled_x?: number, scaled_y?: number) {
-        if (scaled_x === undefined || scaled_y === undefined) {
+    executeMoveGripperToPointGoal(scaled_u?: number, scaled_v?: number) {
+        if (scaled_u === undefined || scaled_v === undefined) {
             return;
         }
         this.moveGripperToPointGoal = this.makeScaledXYToPointGoal(
-            scaled_x,
-            scaled_y
+            scaled_u,
+            scaled_v
         );
         this.moveGripperToPointClient.createClient(
             this.moveGripperToPointGoal,
@@ -1327,8 +1327,8 @@ export class Robot extends React.Component {
                 ) {
                     if (this.moveGripperToPointFeedbackCallback) {
                         this.moveGripperToPointFeedbackCallback({
-                            new_scaled_x: message.values.feedback.new_scaled_x,
-                            new_scaled_y: message.values.feedback.new_scaled_y,
+                            new_scaled_u: message.values.feedback.new_scaled_u,
+                            new_scaled_v: message.values.feedback.new_scaled_v,
                         });
                     }
                 }

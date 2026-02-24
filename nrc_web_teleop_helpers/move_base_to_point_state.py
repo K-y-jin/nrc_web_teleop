@@ -39,6 +39,7 @@ class MoveBaseToPointState(Enum):
     STOW_ARM = 0
     ROTATE_BASE = 1
     HEAD_PAN = 2
+    HEAD_TILT = 3
     MOVE_BASE = 3
     TERMINAL = 8
 

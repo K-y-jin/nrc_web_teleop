@@ -219,21 +219,6 @@ function handleWebRTCMessage(message: WebRTCMessage | WebRTCMessage[]) {
                 message.message
             );
             break;
-        case "moveBaseActionFeedback":
-            console.log("moveBaseActionFeedback", message.message);
-            underMapFunctionProvider.handleMoveBaseActionFeedback(
-                message.message
-            );
-            break;
-        case "moveToPregraspActionFeedback":
-            console.log(
-                "[Debug] moveToPregraspActionFeedback",
-                message.message
-            );
-            underVideoFunctionProvider.handleMoveToPregraspActionFeedback(
-                message.message
-            );
-            break;
         case "moveBaseToPointActionFeedback":
             console.log(
                 "[Debug] moveBaseToPointActionFeedback",

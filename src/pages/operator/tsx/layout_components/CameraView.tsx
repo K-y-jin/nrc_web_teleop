@@ -1,6 +1,7 @@
 import React from "react";
 import {
     className,
+    ActionState,
     gripperProps,
     navigationProps,
     realsenseProps,
@@ -87,6 +88,25 @@ export const CameraView = (props: CustomizableComponentProps) => {
         () => props.definition as CameraViewDefinition,
         [props.definition]
     );
+
+    function moveBaseToPointStateCallback(state: ActionState) {
+        if (state.alert_type == "success") {
+            setIsMovingBaseToPoint(false);
+        }
+    }
+    underVideoFunctionProvider.setMoveBaseToPointOperatorCallbackSub(
+        moveBaseToPointStateCallback
+    );
+
+    function moveGripperToPointStateCallback(state: ActionState) {
+        if (state.alert_type == "success") {
+            setIsMovingGripperToPoint(false);
+        }
+    }
+    underVideoFunctionProvider.setMoveGripperToPointOperatorCallbakcSub(
+        moveGripperToPointStateCallback
+    );
+
     if (!definition.children)
         console.warn(
             `Video stream definition at ${props.path} should have a 'children' property.`
@@ -196,13 +216,13 @@ export const CameraView = (props: CustomizableComponentProps) => {
             (props.definition as RealsenseVideoStreamDef)
                 .selectObjectForMoveToPregrasp
         ) {
-            let scaled_x = x / (right - left);
-            let scaled_y = y / (bottom - top);
-            setSelectObjectScaledXY([scaled_x, scaled_y]);
-            console.log("scaled x", scaled_x, "scaled y", scaled_y);
+            let scaled_u = x / (right - left);
+            let scaled_v = y / (bottom - top);
+            setSelectObjectScaledXY([scaled_u, scaled_v]);
+            console.log("scaled x", scaled_u, "scaled y", scaled_v);
             // underVideoFunctionProvider.provideFunctions(
             //   UnderVideoButton.MoveToPregrasp,
-            // ).onClick!(scaled_x, scaled_y);add
+            // ).onClick!(scaled_u, scaled_v);add
         }
         // [Move-base-to-point] If it is the Overhead, there is no overlay (e.g., button pad),
         else if (props.definition.id == CameraViewId.overhead && !overlay) {
@@ -221,10 +241,10 @@ export const CameraView = (props: CustomizableComponentProps) => {
                 setIsMovingGripperToPoint(false);
                 setSelectLocationScaledXY(null);
             } else {
-                let scaled_x = x / (right - left);
-                let scaled_y = y / (bottom - top);
-                setSelectLocationScaledXY([scaled_x, scaled_y]);
-                console.log("scaled x", scaled_x, "scaled y", scaled_y);
+                let scaled_u = x / (right - left);
+                let scaled_v = y / (bottom - top);
+                setSelectLocationScaledXY([scaled_u, scaled_v]);
+                console.log("scaled x", scaled_u, "scaled y", scaled_v);
             }
         } else {
             setSelectLocationScaledXY(null);

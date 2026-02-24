@@ -211,8 +211,8 @@ export interface MoveBaseToPointActionFeedbackMessage {
 }
 
 export interface MoveBaseToPointActionFeedback {
-    new_scaled_x: number;
-    new_scaled_y: number;
+    new_scaled_u: number;
+    new_scaled_v: number;
 }
 
 export interface MoveGripperToPointActionFeedbackMessage {
@@ -221,8 +221,8 @@ export interface MoveGripperToPointActionFeedbackMessage {
 }
 
 export interface MoveGripperToPointActionFeedback {
-    new_scaled_x: number;
-    new_scaled_y: number;
+    new_scaled_u: number;
+    new_scaled_v: number;
 }
 
 export interface GoalStatusMessage {

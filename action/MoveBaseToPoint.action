@@ -20,6 +20,6 @@ uint8 STATUS_JOINTS_IN_COLLISION = 7
 uint8 status
 ---
 # Feedback
-float32 new_scaled_x
-float32 new_scaled_y
+float32 new_scaled_u
+float32 new_scaled_v
 builtin_interfaces/Duration elapsed_time

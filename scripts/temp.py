@@ -259,8 +259,8 @@ class MoveToPointNode(Node):
 
         # Initialize the feedback
         feedback = MoveToPoint.Feedback()
-        feedback.new_scaled_x = -1.0
-        feedback.new_scaled_y = -1.0
+        feedback.new_scaled_u = -1.0
+        feedback.new_scaled_v = -1.0
 
         # Initialize ORB + Opticalflow tracker
         orb = cv2.ORB_create(nfeatures=1000)
@@ -296,8 +296,8 @@ class MoveToPointNode(Node):
                 goal_handle.request.scaled_u,
                 goal_handle.request.scaled_v,
             )
-            feedback.new_scaled_x = raw_scaled_u
-            feedback.new_scaled_y = raw_scaled_v
+            feedback.new_scaled_u = raw_scaled_u
+            feedback.new_scaled_v = raw_scaled_v
 
             goal_point = np.array([raw_scaled_u * image_width, raw_scaled_v * image_height], dtype=np.float32).reshape(1, 1, 2)
 
@@ -359,8 +359,8 @@ class MoveToPointNode(Node):
                 if st[0][0] == 1 and err[0][0] < 50.0:
                     # Optical flow succeeded, update the goal point
                     goal_point = new_point
-                    feedback.new_scaled_x = goal_point[0][0][0] / image_width
-                    feedback.new_scaled_y = goal_point[0][0][1] / image_height
+                    feedback.new_scaled_u = goal_point[0][0][0] / image_width
+                    feedback.new_scaled_v = goal_point[0][0][1] / image_height
                 else:
                     # Optical flow failed, ORB matching fallback
                     keypoints, descriptors = orb.detectAndCompute(gray_image, None)
@@ -389,8 +389,8 @@ class MoveToPointNode(Node):
                             best_match = valid_matches[0][0]
                             pt = keypoints[best_match.trainIdx].pt
                             goal_point = np.array(pt, dtype=np.float32).reshape(1, 1, 2)
-                            feedback.new_scaled_x = goal_point[0][0][0] / image_width
-                            feedback.new_scaled_y = goal_point[0][0][1] / image_height
+                            feedback.new_scaled_u = goal_point[0][0][0] / image_width
+                            feedback.new_scaled_v = goal_point[0][0][1] / image_height
                             tracking_failure_count = 0  # 성공 시 카운터 리셋
                             # self.get_logger().info(
                             #     f"##### New point (ORB matching fallback): {goal_point}"
@@ -419,8 +419,8 @@ class MoveToPointNode(Node):
                                         new_x = max_loc[0] + template_size // 2
                                         new_y = max_loc[1] + template_size // 2
                                         goal_point = np.array([new_x, new_y], dtype=np.float32).reshape(1, 1, 2)
-                                        # feedback.new_scaled_x = goal_point[0][0][0] / image_width
-                                        # feedback.new_scaled_y = goal_point[0][0][1] / image_height
+                                        # feedback.new_scaled_u = goal_point[0][0][0] / image_width
+                                        # feedback.new_scaled_v = goal_point[0][0][1] / image_height
                                         tracking_failure_count = 0  # 성공 시 카운터 리셋
                                         self.get_logger().info(
                                             f"##### New point (Template matching): {goal_point}, confidence: {max_val:.3f}"

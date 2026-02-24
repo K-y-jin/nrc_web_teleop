@@ -99,7 +99,7 @@ export class RemoteRobot extends React.Component<{}, any> {
 
     incrementalMove(
         jointName: ValidJoints,
-        increment: number,
+        increment: number
     ): VelocityCommand {
         let cmd: IncrementalMove = {
             type: "incrementalMove",
@@ -125,7 +125,7 @@ export class RemoteRobot extends React.Component<{}, any> {
 
     setCameraPerspective(
         camera: "overhead" | "realsense" | "gripper",
-        perspective: string,
+        perspective: string
     ) {
         let cmd: CameraPerspectiveCommand = {
             type: "setCameraPerspective",
@@ -159,30 +159,30 @@ export class RemoteRobot extends React.Component<{}, any> {
         this.robotChannel(cmd);
     }
 
-    moveToPregrasp(scaled_x: number, scaled_y: number, horizontal: boolean) {
+    moveToPregrasp(scaled_u: number, scaled_v: number, horizontal: boolean) {
         let cmd: MoveToPregraspCommand = {
             type: "moveToPregrasp",
-            scaled_x: scaled_x,
-            scaled_y: scaled_y,
+            scaled_u: scaled_u,
+            scaled_v: scaled_v,
             horizontal: horizontal,
         };
         this.robotChannel(cmd);
     }
 
-    moveBaseToPoint(scaled_x: number, scaled_y: number) {
+    moveBaseToPoint(scaled_u: number, scaled_v: number) {
         let cmd: MoveBaseToPointCommand = {
             type: "moveBaseToPoint",
-            scaled_x: scaled_x,
-            scaled_y: scaled_y,
+            scaled_u: scaled_u,
+            scaled_v: scaled_v,
         };
         this.robotChannel(cmd);
     }
 
-    moveGripperToPoint(scaled_x: number, scaled_y: number) {
+    moveGripperToPoint(scaled_u: number, scaled_v: number) {
         let cmd: MoveGripperToPointCommand = {
             type: "moveGripperToPoint",
-            scaled_x: scaled_x,
-            scaled_y: scaled_y,
+            scaled_u: scaled_u,
+            scaled_v: scaled_v,
         };
         this.robotChannel(cmd);
     }
@@ -199,7 +199,7 @@ export class RemoteRobot extends React.Component<{}, any> {
             | "setRealsenseBodyPoseEstimate"
             | "setExpandedGripper"
             | "setRunStop",
-        toggle: boolean,
+        toggle: boolean
     ) {
         let cmd: ToggleCommand = {
             type: type,
@@ -281,7 +281,7 @@ export class RemoteRobot extends React.Component<{}, any> {
     playTextToSpeech(
         text: string,
         override_behavior: number = 0,
-        is_slow: boolean = false,
+        is_slow: boolean = false
     ) {
         let cmd: PlayTextToSpeech = {
             type: "playTextToSpeech",
@@ -323,7 +323,7 @@ class RobotSensors extends React.Component {
     private runStopEnabled: boolean = false;
     private functionProviderCallback?: (
         inJointLimits: ValidJointStateDict,
-        inCollision: ValidJointStateDict,
+        inCollision: ValidJointStateDict
     ) => void;
     private batteryFunctionProviderCallback?: (voltage: number) => void;
     private modeFunctionProviderCallback?: (mode: string) => void;
@@ -365,7 +365,7 @@ class RobotSensors extends React.Component {
     checkValidJointState(
         robotPose: RobotPose,
         jointValues: ValidJointStateDict,
-        effortValues: ValidJointStateDict,
+        effortValues: ValidJointStateDict
     ) {
         if (robotPose !== this.robotPose) {
             this.robotPose = robotPose;
@@ -423,8 +423,8 @@ class RobotSensors extends React.Component {
     setFunctionProviderCallback(
         callback: (
             inJointLimits: ValidJointStateDict,
-            inCollision: ValidJointStateDict,
-        ) => void,
+            inCollision: ValidJointStateDict
+        ) => void
     ) {
         this.functionProviderCallback = callback;
     }
@@ -436,7 +436,7 @@ class RobotSensors extends React.Component {
      * @param callback callback to function provider
      */
     setJointStateFunctionProviderCallback(
-        callback: (robotPose: RobotPose) => void,
+        callback: (robotPose: RobotPose) => void
     ) {
         this.jointStateFunctionProviderCallback = callback;
     }
@@ -517,7 +517,7 @@ class RobotSensors extends React.Component {
         wrist_roll: boolean,
         wrist_pitch: boolean,
         wrist_yaw: boolean,
-        gripper: boolean,
+        gripper: boolean
     ): RobotPose {
         let filteredPose: RobotPose = {};
         if (head) {

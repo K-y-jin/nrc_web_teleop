@@ -116,6 +116,14 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
 
     private moveGripperToPointOperatorCallback?: (state: ActionState) => void =
         undefined;
+
+    private moveBaseToPointOperatorCallbackSub?: (state: ActionState) => void =
+        undefined;
+
+    private moveGripperToPointOperatorCallbakcSub?: (
+        state: ActionState
+    ) => void = undefined;
+
     /**
      * CAllback function to update the show tablet state in the operator
      * interface (e.g., show alerts).
@@ -163,12 +171,16 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
         this.lastMoveBaseToPointStateTimestamp = Date.now();
         if (this.moveBaseToPointOperatorCallback)
             this.moveBaseToPointOperatorCallback(state);
+        if (this.moveBaseToPointOperatorCallbackSub)
+            this.moveBaseToPointOperatorCallbackSub(state);
     }
 
     public setMoveGripperToPointState(state: ActionState) {
         this.lastMoveGripperToPointStateTimestamp = Date.now();
         if (this.moveGripperToPointOperatorCallback)
             this.moveGripperToPointOperatorCallback(state);
+        if (this.moveGripperToPointOperatorCallbakcSub)
+            this.moveGripperToPointOperatorCallbakcSub(state);
     }
 
     public handleMoveBaseToPointActionFeedback(
@@ -176,8 +188,8 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
     ) {
         if (this.selectedLocationScaledXYCallback) {
             this.selectedLocationScaledXYCallback([
-                feedback.new_scaled_x,
-                feedback.new_scaled_y,
+                feedback.new_scaled_u,
+                feedback.new_scaled_v,
             ]);
         }
     }
@@ -187,8 +199,8 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
     ) {
         if (this.selectedLocationScaledXYCallback) {
             this.selectedLocationScaledXYCallback([
-                feedback.new_scaled_x,
-                feedback.new_scaled_y,
+                feedback.new_scaled_u,
+                feedback.new_scaled_v,
             ]);
         }
     }
@@ -518,10 +530,22 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
         this.moveBaseToPointOperatorCallback = callback;
     }
 
+    public setMoveBaseToPointOperatorCallbackSub(
+        callback: (state: ActionState) => void
+    ) {
+        this.moveBaseToPointOperatorCallbackSub = callback;
+    }
+
     public setMoveGripperToPointOperatorCallback(
         callback: (state: ActionState) => void
     ) {
         this.moveGripperToPointOperatorCallback = callback;
+    }
+
+    public setMoveGripperToPointOperatorCallbakcSub(
+        callback: (state: ActionState) => void
+    ) {
+        this.moveGripperToPointOperatorCallbakcSub = callback;
     }
 
     /**

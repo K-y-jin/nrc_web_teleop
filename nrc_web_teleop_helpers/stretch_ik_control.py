@@ -497,6 +497,21 @@ class StretchIKControl:
         yield MotionGeneratorRetval.FAILURE if check_cancel() else MotionGeneratorRetval.SUCCESS
         return
 
+    def get_head_joint_states(self) -> Dict[Joint, float]:
+        """
+        Get the current state of the head pan joint.
+
+        Returns
+        -------
+        float: The current state of the head pan joint.
+        """
+        with self.latest_joint_state_lock:
+            latest_joint_state = self.latest_joint_state
+        head_joint_states = {}
+        head_joint_states[Joint.HEAD_PAN] = latest_joint_state[Joint.HEAD_PAN]
+        head_joint_states[Joint.HEAD_TILT] = latest_joint_state[Joint.HEAD_TILT]
+        return head_joint_states
+
     def move_to_ee_pose_inverse_jacobian(
         self,
         goal: PoseStamped,

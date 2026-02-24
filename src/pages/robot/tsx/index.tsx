@@ -353,8 +353,8 @@ function handleMessage(message: WebRTCMessage) {
             break;
         case "moveToPregrasp":
             robot.executeMoveToPregraspGoal(
-                message.scaled_x,
-                message.scaled_y,
+                message.scaled_u,
+                message.scaled_v,
                 message.horizontal
             );
             break;
@@ -363,8 +363,8 @@ function handleMessage(message: WebRTCMessage) {
             break;
         case "moveBaseToPoint":
             robot.executeMoveBaseToPointGoal(
-                message.scaled_x,
-                message.scaled_y
+                message.scaled_u,
+                message.scaled_v
             );
             break;
         case "stopMoveBaseToPoint":
@@ -372,8 +372,8 @@ function handleMessage(message: WebRTCMessage) {
             break;
         case "moveGripperToPoint":
             robot.executeMoveGripperToPointGoal(
-                message.scaled_x,
-                message.scaled_y
+                message.scaled_u,
+                message.scaled_v
             );
             break;
         case "stopMoveGripperToPoint":

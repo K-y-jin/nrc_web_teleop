@@ -110,8 +110,8 @@ export interface StopMoveBaseCommand {
 
 export interface MoveToPregraspCommand {
     type: "moveToPregrasp";
-    scaled_x: number;
-    scaled_y: number;
+    scaled_u: number;
+    scaled_v: number;
     horizontal: boolean;
 }
 
@@ -121,8 +121,8 @@ export interface StopMoveToPregraspCommand {
 
 export interface MoveBaseToPointCommand {
     type: "moveBaseToPoint";
-    scaled_x: number;
-    scaled_y: number;
+    scaled_u: number;
+    scaled_v: number;
 }
 
 export interface StopMoveBaseToPointCommand {
@@ -131,8 +131,8 @@ export interface StopMoveBaseToPointCommand {
 
 export interface MoveGripperToPointCommand {
     type: "moveGripperToPoint";
-    scaled_x: number;
-    scaled_y: number;
+    scaled_u: number;
+    scaled_v: number;
 }
 
 export interface StopMoveGripperToPointCommand {

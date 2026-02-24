@@ -207,16 +207,16 @@ class MoveBaseToPointNode(Node):
 
         goal_point = None
         # Get the initial goal point
-        raw_scaled_x, raw_scaled_y = (
-            goal_handle.request.scaled_x,
-            goal_handle.request.scaled_y,
+        raw_scaled_u, raw_scaled_v = (
+            goal_handle.request.scaled_u,
+            goal_handle.request.scaled_v,
         )
-        goal_point = np.array([raw_scaled_x, raw_scaled_y])
+        goal_point = np.array([raw_scaled_u, raw_scaled_v])
         self.get_logger().debug(f"Initial Goal Point of the Base: {goal_point}")
 
         # Publich_feedback message
         def publish_update_goal_point_feedback():
-            self.get_logger().info(f"Current Goal Point of the Base: [{feedback.new_scaled_x}, {feedback.new_scaled_y}]")
+            self.get_logger().info(f"Current Goal Point of the Base: [{feedback.new_scaled_u}, {feedback.new_scaled_v}]")
             feedback.elapsed_time = (self.get_clock().now() - start_time).to_msg()
             goal_handle.publish_feedback(feedback)    
 
@@ -233,15 +233,15 @@ class MoveBaseToPointNode(Node):
         initial_head_pan = initial_head_joint_states[Joint.HEAD_PAN]
         initial_head_tilt = initial_head_joint_states[Joint.HEAD_TILT]
 
-        pan_theta = -1.0 * np.arctan2(raw_scaled_x - 0.5, 0.5) # HFOV 90deg
+        pan_theta = -1.0 * np.arctan2(raw_scaled_u - 0.5, 0.5) # HFOV 90deg
         beta = np.pi * (127.0/180.0) # VFOV 127deg
         focal_length = 0.5 / np.tan(beta/2.0)
-        alpha = -1.0 * np.arctan2(raw_scaled_y-0.5, focal_length)  # tan(alpha) = (y-0.5) / focal_length
+        alpha = -1.0 * np.arctan2(raw_scaled_v-0.5, focal_length)  # tan(alpha) = (y-0.5) / focal_length
         tilt_theta = -np.pi * (33.0/180.0) # -33deg down # unseen x is zero when 33deg down
-        feedback.new_scaled_x = 0.5
-        feedback.new_scaled_y = focal_length * np.tan(tilt_theta - (initial_head_tilt+alpha)) + 0.5
+        feedback.new_scaled_u = 0.5
+        feedback.new_scaled_v = focal_length * np.tan(tilt_theta - (initial_head_tilt+alpha)) + 0.5
         
-        alpha = np.arctan2(0.5 - feedback.new_scaled_y, focal_length)
+        alpha = np.arctan2(0.5 - feedback.new_scaled_v, focal_length)
         height = 1.24 # about 1 m
         x_dist = 0.0 # height * np.tan(np.pi/2 + tilt_theta + alpha)
         # self.get_logger().info(f"##### x_dist: {x_dist}")
@@ -255,8 +255,8 @@ class MoveBaseToPointNode(Node):
             nonlocal tilt_theta, beta, focal_length, height
             feedback.elapsed_time = (self.get_clock().now() - start_time).to_msg()
             alpha = np.arctan2(distance_error, height) - beta/2
-            feedback.new_scaled_y = 0.5 - focal_length * np.tan(alpha)
-            feedback.new_scaled_x = 0.5
+            feedback.new_scaled_v = 0.5 - focal_length * np.tan(alpha)
+            feedback.new_scaled_u = 0.5
             # self.get_logger().info(f"##### Feedback: {distance_error}")
             goal_handle.publish_feedback(feedback)
 

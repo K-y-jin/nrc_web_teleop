@@ -17,6 +17,7 @@ class Joint(Enum):
     Joint names of Stretch.
     """
 
+    BASE_TRANSLATION = "joint_mobile_base_translation"
     BASE_ROTATION = "joint_mobile_base_rotation"
     ARM_LIFT = "joint_lift"
     ARM_L0 = "joint_arm_l0"
