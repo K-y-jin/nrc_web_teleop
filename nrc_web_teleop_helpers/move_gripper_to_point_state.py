@@ -13,6 +13,7 @@ from std_msgs.msg import Header
 from .constants import (
     Joint,
     get_stow_configuration,
+    get_pregrasp_wrist_configuration,
 )
 from .stretch_ik_control import (
     MotionGeneratorRetval,
@@ -30,14 +31,15 @@ class MoveGripperToPointState(Enum):
     """
 
     STOW_ARM = 0
-
+    ALIGN_WRIST = 1
+    ROTATE_BASE = 2
     TERMINAL = 8
 
     @staticmethod
-    def get_state_machine(setup_mode: bool = True) -> List[List[MoveGripperToPointState]]:
+    def get_state_machine() -> List[List[MoveGripperToPointState]]:
         states = []
-        if setup_mode:
-            states.append([MoveGripperToPointState.STOW_ARM])
+        states.append([MoveGripperToPointState.STOW_ARM])
+        states.append([MoveGripperToPointState.ALIGN_WRIST])
         states.append([MoveGripperToPointState.TERMINAL])
         return states
 
@@ -67,11 +69,36 @@ class MoveGripperToPointState(Enum):
         if self == MoveGripperToPointState.TERMINAL:
             return None
         elif self == MoveGripperToPointState.STOW_ARM:
-            joints_for_position_control.update(
-                get_stow_configuration([Joint.ARM_L0, Joint.ARM_LIFT, Joint.WRIST_PITCH],
-                grip_stuff=True)
+            joints_for_position_control = get_stow_configuration(
+                joints=[Joint.ARM_L0, Joint.ARM_LIFT],
+                partial=False,
             )
-        
+        elif self == MoveGripperToPointState.ALIGN_WRIST:
+            joints_for_position_control.update(
+                get_pregrasp_wrist_configuration()
+            )
+        elif self == MoveGripperToPointState.ROTATE_BASE:
+            success_callback_temp = success_callback[0]
+            goal_pose = PoseStamped()
+            header = Header()
+            header.frame_id = "base_link"
+            header.stamp = controller.node.get_clock().now().to_msg()
+            goal_pose.header = header
+
+            goal_pose.pose.position = Point(x=0.0, y=0.0, z=0.0)
+            base_rotation = ik_solution[Joint.BASE_ROTATION]
+            r = quaternion_about_axis(base_rotation, [0, 0, 1])
+            goal_pose.pose.orientation = Quaternion(x=r[0], y=r[1], z=r[2], w=r[3])
+
+            joints_for_velocity_control += [Joint.BASE_ROTATION]
+            joint_position_overrides.update(
+                {
+                    joint: position
+                    for joint, position in ik_solution.items()
+                    if joint != Joint.BASE_ROTATION
+                }
+            )
+              
         # Create the motion executor
         if len(joints_for_velocity_control) > 0:
             return controller.rotate_base_to_goal_pose(

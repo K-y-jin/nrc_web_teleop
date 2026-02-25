@@ -126,18 +126,18 @@ class MoveBaseToPointNode(Node):
                 return GoalResponse.REJECT
 
         # Reject the goal is there is already an active goal
-        with self.active_goal_request_lock:
-            if self.active_goal_request is not None:
+        # with self.active_goal_request_lock:
+        #     if self.active_goal_request is not None:
                 
-                self.get_logger().info(
-                    "Rejecting goal request since there is already an active one"
-                )
-                return GoalResponse.REJECT
+        #         self.get_logger().info(
+        #             "Rejecting goal request since there is already an active one"
+        #         )
+        #         return GoalResponse.REJECT
 
-            # Accept the goal
-            self.get_logger().info("Accepting goal request")
-            self.active_goal_request = goal_request
-            return GoalResponse.ACCEPT
+        # Accept the goal
+        self.get_logger().info("Accepting goal request")
+        self.active_goal_request = goal_request
+        return GoalResponse.ACCEPT
 
     def cancel_callback(self, _: ServerGoalHandle) -> CancelResponse:
         """
@@ -212,18 +212,22 @@ class MoveBaseToPointNode(Node):
             goal_handle.request.scaled_v,
         )
         goal_point = np.array([raw_scaled_u, raw_scaled_v])
-        self.get_logger().debug(f"Initial Goal Point of the Base: {goal_point}")
+        self.get_logger().debug(f"##### Initial Goal Point: {goal_point}")
+
+        with self.latest_navigation_camera_image_lock:
+            image_msg = self.latest_navigation_camera_image
+        header = image_msg.header
 
         # Publich_feedback message
         def publish_update_goal_point_feedback():
-            self.get_logger().info(f"Current Goal Point of the Base: [{feedback.new_scaled_u}, {feedback.new_scaled_v}]")
+            self.get_logger().info(f"##### Updated Goal Point: [{feedback.new_scaled_u}, {feedback.new_scaled_v}]")
             feedback.elapsed_time = (self.get_clock().now() - start_time).to_msg()
             goal_handle.publish_feedback(feedback)    
 
         # Execute the states
         motion_executors: List[Generator[MotionGeneratorRetval, None, None]] = []
         states = MoveBaseToPointState.get_state_machine(setup_mode=True)
-        # self.get_logger().info(f"All States: {states}")
+        self.get_logger().info(f"All States: {states}")
 
         state_i = 0
         rate = self.create_rate(5.0)  # 5 Hz
@@ -243,14 +247,15 @@ class MoveBaseToPointNode(Node):
         
         alpha = np.arctan2(0.5 - feedback.new_scaled_v, focal_length)
         height = 1.24 # about 1 m
-        x_dist = 0.0 # height * np.tan(np.pi/2 + tilt_theta + alpha)
-        # self.get_logger().info(f"##### x_dist: {x_dist}")
+        x_dist = height * np.tan(np.pi/2 + tilt_theta + alpha)
+        self.get_logger().info(f"##### x_dist: {x_dist}")
 
         goal_positions = {}
         goal_positions[Joint.BASE_ROTATION] = initial_head_pan + pan_theta
         goal_positions[Joint.HEAD_PAN] = pan_theta
         goal_positions[Joint.HEAD_TILT] = tilt_theta
         goal_positions[Joint.BASE_TRANSLATION] = x_dist
+        
         def update_feedback_and_publish_feedback(distance_error: float):
             nonlocal tilt_theta, beta, focal_length, height
             feedback.elapsed_time = (self.get_clock().now() - start_time).to_msg()
@@ -278,6 +283,7 @@ class MoveBaseToPointNode(Node):
                 for state in concurrent_states:
                     motion_executor = state.get_motion_executor(
                         controller=self.controller,
+                        header=header,
                         ik_solution=goal_positions,
                         timeout_secs=remaining_time(
                             self.get_clock().now(),
@@ -300,7 +306,7 @@ class MoveBaseToPointNode(Node):
                         if retval == MotionGeneratorRetval.SUCCESS:
                             motion_executors.pop(i)
                             self.get_logger().info(
-                                f"Success (State Num {state_i}:{concurrent_states}"
+                                f"##### Success (State Num {state_i}:{concurrent_states}"
                             )
                             break
                         elif retval == MotionGeneratorRetval.FAILURE:

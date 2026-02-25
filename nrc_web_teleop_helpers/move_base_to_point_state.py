@@ -12,8 +12,6 @@ from std_msgs.msg import Header
 # Local imports
 from .constants import (
     Joint,
-    get_gripper_configuration,
-    get_pregrasp_wrist_configuration,
     get_stow_configuration,
 )
 from .stretch_ik_control import (
@@ -39,9 +37,9 @@ class MoveBaseToPointState(Enum):
     STOW_ARM = 0
     ROTATE_BASE = 1
     HEAD_PAN = 2
-    HEAD_TILT = 3
     MOVE_BASE = 3
-    TERMINAL = 8
+    HEAD_TILT = 4
+    TERMINAL = 5
 
     @staticmethod
     def get_state_machine(setup_mode: bool = True) -> List[List[MoveBaseToPointState]]:
@@ -57,6 +55,7 @@ class MoveBaseToPointState(Enum):
     def get_motion_executor(
         self,
         controller: StretchIKControl,
+        header: Header,
         ik_solution: Dict[Joint, float],
         timeout_secs: float,
         check_cancel: Callable[[], bool] = lambda: False,
@@ -69,6 +68,8 @@ class MoveBaseToPointState(Enum):
         joint_position_overrides = {}
         joints_for_position_control = {}
         velocity_overrides = {}
+        error_callback_temp = None
+        success_callback_temp = None
 
         # Configure the parameters depending on the state
         if self == MoveBaseToPointState.TERMINAL:
@@ -81,10 +82,10 @@ class MoveBaseToPointState(Enum):
         elif self == MoveBaseToPointState.ROTATE_BASE:
             success_callback_temp = success_callback[0]
             goal_pose = PoseStamped()
-            header = Header()
-            header.frame_id = "base_link"
-            header.stamp = controller.node.get_clock().now().to_msg()
+            # header = Header()
+            # header.stamp = controller.node.get_clock().now().to_msg()
             goal_pose.header = header
+            header.frame_id = "base_link"
 
             goal_pose.pose.position = Point(x=0.0, y=0.0, z=0.0)
             base_rotation = ik_solution[Joint.BASE_ROTATION]
@@ -112,10 +113,10 @@ class MoveBaseToPointState(Enum):
             error_callback_temp = err_callback[0]
             # move base to the goal point
             goal_pose = PoseStamped()
-            header = Header()
-            header.frame_id = "base_link"
-            header.stamp = controller.node.get_clock().now().to_msg()
+            # header = Header()
+            # header.stamp = controller.node.get_clock().now().to_msg()
             goal_pose.header = header
+            header.frame_id = "base_link"
 
             goal_pose.pose.position = Point(x=ik_solution[Joint.BASE_TRANSLATION], y=0.0, z=0.0)
             goal_pose.pose.orientation = Quaternion(x=1.0, y=0.0, z=0.0, w=0.0)
@@ -139,8 +140,8 @@ class MoveBaseToPointState(Enum):
                 joint_position_overrides=joint_position_overrides,
                 timeout_secs=timeout_secs,
                 check_cancel=check_cancel,
-                err_callback=err_callback,
-                success_callback=success_callback,
+                err_callback=error_callback_temp,
+                success_callback=success_callback_temp,
             )
         if len(joints_for_position_control) > 0:
             return controller.move_to_joint_positions(

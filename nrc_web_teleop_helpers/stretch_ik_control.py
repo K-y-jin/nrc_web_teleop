@@ -241,6 +241,7 @@ class StretchIKControl:
         self.joint_vel_abs_lim: Dict[Joint, Tuple[float, float]] = {}
         # Get the velocity limits for the controllable joints
         joint_map = {
+            # Joint.BASE_TRANSLATION: ("base", "vel_m"),
             Joint.ARM_LIFT: ("lift", "vel_m"),
             Joint.ARM_L0: ("arm", "vel_m"),
             Joint.COMBINED_ARM: ("arm", "vel_m"),
@@ -271,8 +272,11 @@ class StretchIKControl:
                     min_abs_vel = 0.0
             elif joint_name == Joint.BASE_ROTATION:
                 # https://github.com/hello-robot/stretch_visual_servoing/blob/f99342/normalized_velocity_control.py#L21
-                max_abs_vel = 0.5   # Joint.BASE_ROTATION: ("base, vel_m")로 불러오는 것보다 오히려 큰 값 
+                max_abs_vel = 0.5   # Joint.BASE_ROTATION: ("base, vel_m")로 불러오는 것(0.3 m/s)보다 오히려 큰 값 
                 min_abs_vel = 0.05  # rad/s
+            elif joint_name == Joint.BASE_TRANSLATION:
+                max_abs_vel = 0.5   # m/s
+                min_abs_vel = 0.3  # m/s
             else:
                 self.node.get_logger().debug(
                     f"Will not get limits for joint name: {joint_name}"
@@ -389,7 +393,7 @@ class StretchIKControl:
         # Limit the joint positions
         _, joint_positions = self.check_joint_limits(joint_positions)
         self.node.get_logger().debug(f"Target Joint Positions: {joint_positions}")
-
+        
         # The duration of each trajectory command
         duration = 1.0  # seconds
 
@@ -686,7 +690,7 @@ class StretchIKControl:
         articulated_joints: List[Joint],
         termination: TerminationCriteria,
         joint_position_overrides: Dict[Joint, float] = {},
-        rate_hz: float = 5.0,
+        rate_hz: float = 10.0,
         timeout_secs: float = 10.0,
         check_cancel: Callable[[], bool] = lambda: False,
         err_callback: Optional[Callable[[npt.NDArray[float]], None]] = None,
@@ -733,6 +737,11 @@ class StretchIKControl:
                 yield MotionGeneratorRetval.FAILURE
                 return
 
+        # Set navigation mode
+        if not self.set_navigation_mode(timeout = Duration(seconds=3.0)):
+            yield MotionGeneratorRetval.FAILURE
+            return
+
         # Convert the goal pose to the odom frame, so it stays stationary as the robot moves.
         ok, goal_odom = self.__transform_pose(goal, Frame.ODOM, start_time, timeout)
         if not ok:
@@ -760,31 +769,19 @@ class StretchIKControl:
             if not ok:
                 yield MotionGeneratorRetval.FAILURE
                 return
-            # self.node.get_logger().info(f"##### goal_base: {goal_base.pose}")
-            # Get the error in the base rotation
-            # base_quat = [0.0, 0.0, 0.0, 1.0]
-            # yaw, _, _ = euler_from_quaternion(base_quat, axes="rzyx",)
-            # self.node.get_logger().info(f"##### yaw: {yaw}")
+
+            # Calculate the yaw error
             goal_quat = [goal_base.pose.orientation.x, goal_base.pose.orientation.y, goal_base.pose.orientation.z, goal_base.pose.orientation.w]
             goal_yaw, _, _ = euler_from_quaternion(goal_quat, axes="rzyx",)
-            # self.node.get_logger().info(f"##### goal_yaw: {goal_yaw}")
-            err = goal_yaw # - yaw 
+            err = np.array([goal_yaw]) # - yaw 
             
-            if err_callback is not None:
-                # Get the current joint state
-                # Get the latest joints
-                with self.latest_joint_state_lock:
-                    latest_joint_state = self.latest_joint_state
-                # self.node.get_logger().info(f"##### joint_state: {latest_joint_state}")
-                q_head_pan = latest_joint_state[Joint.HEAD_PAN]
-                err_callback(err, q_head_pan)
-
-            self.node.get_logger().debug(f"##### Base Yaw Error: {err}")
+            self.node.get_logger().debug(f"##### Base Yaw Error: {err[0]}")
 
             # Calculate the joint velocities
-            K_base_rotation = 10.0
+            K_base_rotation = 1.0
             vel = np.zeros(len(self.controllable_joints), dtype=float)
-            vel[0] = K_base_rotation * err  # rad/s
+            vel[0] = K_base_rotation * err[0]  # rad/s
+            self.node.get_logger().debug(f"##### Base Rotation Velocity: {vel[0]}, Error: {err[0]}")
             
             # Clip the velocities
             joint_velocities = dict(zip(self.controllable_joints, vel))
@@ -805,6 +802,110 @@ class StretchIKControl:
         if check_cancel():
             yield MotionGeneratorRetval.FAILURE
         else:
+            self.node.get_logger().debug("##### SUCCESS Rotation Base to Goal Pose.")
+            if success_callback is not None:
+                success_callback()
+            yield MotionGeneratorRetval.SUCCESS
+        return
+
+    def translate_base_to_goal_pose(
+        self,
+        goal: PoseStamped,
+        termination: TerminationCriteria,
+        rate_hz: float = 10.0,
+        timeout_secs: float = 10.0,
+        check_cancel: Callable[[], bool] = lambda: False,
+        err_callback: Optional[Callable[[npt.NDArray[float]], None]] = None,
+        success_callback: Optional[Callable[[npt.NDArray[float]], None]] = None,
+    ) -> Generator[MotionGeneratorRetval, None, None]:
+        """
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        MotionGeneratorRetval: The return value for the action.
+        """
+
+        # Check if the controller is initialized
+        if not self.initialized:
+            self.node.get_logger().error("Controller is not initialized.")
+            yield MotionGeneratorRetval.FAILURE
+            return
+
+        # Start the timer
+        start_time = self.node.get_clock().now()
+        timeout = Duration(seconds=timeout_secs)
+
+        # Check the valid goal.
+        # 필요한 조건문 추가
+
+        # Set navigation mode
+        if not self.set_navigation_mode(timeout = Duration(seconds=3.0)):
+            yield MotionGeneratorRetval.FAILURE
+            return
+
+        # Convert the goal pose to the odom frame, so it stays stationary as the robot moves.
+        goal.header.stamp = Time()
+        ok, goal_odom = self.__transform_pose(goal, Frame.ODOM, start_time, timeout)
+        if not ok:
+            yield MotionGeneratorRetval.FAILURE
+            return
+        
+        # Command motion until the termination criteria is reached
+        err = None
+        vel = None
+        rate = self.node.create_rate(rate_hz)
+        while not check_cancel() and not self.__reached_termination(
+            termination, err, vel, cartesian_mask=None
+        ):
+            self.node.get_logger().debug(" Loop Started...")
+            # Leave early if ROS shuts down or timeout is reached
+            if not rclpy.ok() or remaining_time(
+                self.node.get_clock().now(), start_time, timeout
+            ) <= Duration(seconds=0.0):
+                yield MotionGeneratorRetval.FAILURE
+                return
+            
+            # Get goal_pose in current base frame
+            goal_odom.header.stamp = Time()
+            ok, goal_base = self.__transform_pose(goal_odom, Frame.BASE_LINK, start_time, timeout)
+            if not ok:
+                yield MotionGeneratorRetval.FAILURE
+                return
+
+            # Calculate the yaw error
+            goal_x = [goal_base.pose.position.x, goal_base.pose.position.y, goal_base.pose.position.z]
+            err = np.array([goal_x[0]])
+            if err_callback is not None:
+                err_callback(err[0])
+
+            # Calculate the joint velocities
+            K_base_translation = 1.0
+            vel = np.zeros(len(self.controllable_joints), dtype=float)
+            joint_velocities = {}
+            joint_velocities[Joint.BASE_TRANSLATION] = K_base_translation * err[0]  # m/s
+
+            # Clip the velocities
+            self.node.get_logger().debug(f"Pre-Clip Velocities: {joint_velocities}")
+            _, clipped_velocities = self.check_velocity_limits(joint_velocities)
+            self.node.get_logger().debug(f"Commanding Velocities: {clipped_velocities[Joint.BASE_TRANSLATION]}")
+
+            # Send base commands
+            base_vel = Twist()
+            base_vel.linear.x = clipped_velocities[Joint.BASE_TRANSLATION]
+            self.base_vel_pub.publish(base_vel)
+
+            rate.sleep()
+
+            # Yield control back to the main action loop
+            yield MotionGeneratorRetval.CONTINUE
+
+        if check_cancel():
+            yield MotionGeneratorRetval.FAILURE
+        else:
+            self.node.get_logger().debug("##### SUCCESS Translation Base to Goal Pose.")
             if success_callback is not None:
                 success_callback()
             yield MotionGeneratorRetval.SUCCESS
