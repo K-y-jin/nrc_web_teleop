@@ -13,7 +13,7 @@ from std_msgs.msg import Header
 from .constants import (
     Joint,
     get_stow_configuration,
-    get_pregrasp_wrist_configuration,
+    get_pregrasp_wrist_configuration
 )
 from .stretch_ik_control import (
     MotionGeneratorRetval,
@@ -24,28 +24,39 @@ from tf_transformations import quaternion_about_axis
 
 class MoveGripperToPointState(Enum):
     """
-    Determine the user assistant state.
+    Determine the goal point is reachable.
     First, the robot stow the arm.
-    Second, the robot rotate its base heading to the user assistant, keeping the camera view fixed.
-    Third, the robot move its base to the user assistant.
+    Second, the robot rotate its base heading to the goal point, keeping the camera view fixed.
+    Third, the robot move its base to the goal point.
+
+    The below states can be strung together to form a state machine that moves the robot
+    to a pregrasp position. The general principle we follow is that the robot should only
+    rotate its base and move the lift when its arm is within the base footprint of the robot
+    (i.e., the arm length is fully in and the wrist is stowed).
     """
 
     STOW_ARM = 0
-    ALIGN_WRIST = 1
-    ROTATE_BASE = 2
-    TERMINAL = 8
+    ROTATE_BASE = 1
+    HEAD_PAN = 2
+    WRIST_ALIGN = 3
+    MOVE_BASE = 4
+    HEAD_TILT = 5
+    TERMINAL = 6
 
     @staticmethod
     def get_state_machine() -> List[List[MoveGripperToPointState]]:
         states = []
         states.append([MoveGripperToPointState.STOW_ARM])
-        states.append([MoveGripperToPointState.ALIGN_WRIST])
+        states.append([MoveGripperToPointState.ROTATE_BASE, MoveGripperToPointState.HEAD_PAN])
+        states.append([MoveGripperToPointState.HEAD_TILT])
+        # states.append([MoveGripperToPointState.MOVE_BASE])
         states.append([MoveGripperToPointState.TERMINAL])
         return states
 
     def get_motion_executor(
         self,
         controller: StretchIKControl,
+        header: Header,
         ik_solution: Dict[Joint, float],
         timeout_secs: float,
         check_cancel: Callable[[], bool] = lambda: False,
@@ -60,30 +71,24 @@ class MoveGripperToPointState(Enum):
         velocity_overrides = {}
         error_callback_temp = None
         success_callback_temp = None
-        goal_pose = PoseStamped(
-            header=Header(frame_id="base_link"),
-            pose=PoseStamped().pose,
-        )
 
         # Configure the parameters depending on the state
         if self == MoveGripperToPointState.TERMINAL:
             return None
         elif self == MoveGripperToPointState.STOW_ARM:
-            joints_for_position_control = get_stow_configuration(
-                joints=[Joint.ARM_L0, Joint.ARM_LIFT],
-                partial=False,
-            )
-        elif self == MoveGripperToPointState.ALIGN_WRIST:
             joints_for_position_control.update(
-                get_pregrasp_wrist_configuration()
+                get_stow_configuration([Joint.ARM_L0, Joint.ARM_LIFT, Joint.WRIST_PITCH, Joint.WRIST_ROLL, Joint.WRIST_YAW])
             )
+        elif self == MoveGripperToPointState.WRIST_ALIGN:
+            joints_for_position_control.update(get_pregrasp_wrist_configuration(horizontal=True))
+            joints_for_position_control[Joint.ARM_LIFT] = ik_solution[Joint.ARM_LIFT]
         elif self == MoveGripperToPointState.ROTATE_BASE:
             success_callback_temp = success_callback[0]
             goal_pose = PoseStamped()
-            header = Header()
-            header.frame_id = "base_link"
-            header.stamp = controller.node.get_clock().now().to_msg()
+            # header = Header()
+            # header.stamp = controller.node.get_clock().now().to_msg()
             goal_pose.header = header
+            header.frame_id = "base_link"
 
             goal_pose.pose.position = Point(x=0.0, y=0.0, z=0.0)
             base_rotation = ik_solution[Joint.BASE_ROTATION]
@@ -98,7 +103,37 @@ class MoveGripperToPointState(Enum):
                     if joint != Joint.BASE_ROTATION
                 }
             )
-              
+        elif self == MoveGripperToPointState.HEAD_PAN:
+            joints_for_position_control[Joint.HEAD_PAN] = ik_solution[Joint.HEAD_PAN] # 90deg to the left
+            velocity_overrides[Joint.HEAD_PAN] = controller.joint_vel_abs_lim[
+                Joint.BASE_ROTATION
+            ][1]
+        elif self == MoveGripperToPointState.HEAD_TILT:
+            joints_for_position_control[Joint.HEAD_TILT] = ik_solution[Joint.HEAD_TILT] # 33deg down
+            velocity_overrides[Joint.HEAD_TILT] = 0.5
+
+        elif self == MoveGripperToPointState.MOVE_BASE:
+            error_callback_temp = err_callback[0]
+            # move base to the goal point
+            goal_pose = PoseStamped()
+            # header = Header()
+            # header.stamp = controller.node.get_clock().now().to_msg()
+            goal_pose.header = header
+            header.frame_id = "base_link"
+
+            goal_pose.pose.position = Point(x=ik_solution[Joint.BASE_TRANSLATION], y=0.0, z=0.0)
+            goal_pose.pose.orientation = Quaternion(x=1.0, y=0.0, z=0.0, w=0.0)
+            # Joint.BASE_TRANSLATION is not included in the controllable joints
+            # So, we cannot use the ZERO_VEL termination criteria
+            return controller.translate_base_to_goal_pose(
+                goal=goal_pose,
+                termination=TerminationCriteria.ZERO_ERR,
+                timeout_secs=timeout_secs,
+                check_cancel=check_cancel,
+                err_callback=error_callback_temp,
+                success_callback=success_callback_temp,
+            )
+
         # Create the motion executor
         if len(joints_for_velocity_control) > 0:
             return controller.rotate_base_to_goal_pose(

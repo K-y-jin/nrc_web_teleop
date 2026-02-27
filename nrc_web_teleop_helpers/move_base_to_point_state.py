@@ -42,13 +42,12 @@ class MoveBaseToPointState(Enum):
     TERMINAL = 5
 
     @staticmethod
-    def get_state_machine(setup_mode: bool = True) -> List[List[MoveBaseToPointState]]:
+    def get_state_machine() -> List[List[MoveBaseToPointState]]:
         states = []
-        if setup_mode:
-            states.append([MoveBaseToPointState.STOW_ARM])
-            states.append([MoveBaseToPointState.ROTATE_BASE, MoveBaseToPointState.HEAD_PAN])
-            states.append([MoveBaseToPointState.HEAD_TILT])
-            states.append([MoveBaseToPointState.MOVE_BASE])
+        states.append([MoveBaseToPointState.STOW_ARM])
+        states.append([MoveBaseToPointState.ROTATE_BASE, MoveBaseToPointState.HEAD_PAN])
+        states.append([MoveBaseToPointState.HEAD_TILT])
+        states.append([MoveBaseToPointState.MOVE_BASE])
         states.append([MoveBaseToPointState.TERMINAL])
         return states
 
@@ -76,14 +75,11 @@ class MoveBaseToPointState(Enum):
             return None
         elif self == MoveBaseToPointState.STOW_ARM:
             joints_for_position_control.update(
-                get_stow_configuration([Joint.ARM_L0, Joint.ARM_LIFT, Joint.WRIST_PITCH],
-                grip_stuff=True)
+                get_stow_configuration([Joint.ARM_L0, Joint.ARM_LIFT, Joint.WRIST_PITCH])
             )
         elif self == MoveBaseToPointState.ROTATE_BASE:
             success_callback_temp = success_callback[0]
             goal_pose = PoseStamped()
-            # header = Header()
-            # header.stamp = controller.node.get_clock().now().to_msg()
             goal_pose.header = header
             header.frame_id = "base_link"
 
@@ -101,7 +97,7 @@ class MoveBaseToPointState(Enum):
                 }
             )
         elif self == MoveBaseToPointState.HEAD_PAN:
-            joints_for_position_control[Joint.HEAD_PAN] = 0.0
+            joints_for_position_control[Joint.HEAD_PAN] = ik_solution[Joint.HEAD_PAN] # pan to the goal point
             velocity_overrides[Joint.HEAD_PAN] = controller.joint_vel_abs_lim[
                 Joint.BASE_ROTATION
             ][1]

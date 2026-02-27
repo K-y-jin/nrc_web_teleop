@@ -92,7 +92,7 @@ class SpeedProfile(Enum):
 
 
 def get_stow_configuration(
-    joints: List[Joint], partial: bool = False, grip_stuff: bool = False
+    joints: List[Joint], partial: bool = False
 ) -> Dict[Joint, float]:
     """
     Get the joint configuration for stowing the arm.
@@ -111,8 +111,6 @@ def get_stow_configuration(
     Returns
     -------
     Dict[Joint, float]: The joint configuration.
-
-    grip_stuff 옵션: 물건을 운반하는 상황을 고려하여 파라미터를 변경함.
     """
     retval = {}
     for joint in joints:
@@ -121,15 +119,15 @@ def get_stow_configuration(
         elif joint == Joint.ARM_LIFT:
             retval[
                 joint
-            ] = 0.40 if not grip_stuff else 0.8  # 0 to about 1.1m
+            ] = 0.40 # 0 to about 1.1m
              # This is chosen so even when the gripper is pointing down, it doesn't hit the base.
-        elif joint == Joint.WRIST_YAW and not grip_stuff:
+        elif joint == Joint.WRIST_YAW:
             retval[joint] = 3.19579  # Should match src/shared/util.tsx
         elif joint == Joint.WRIST_PITCH:
-            retval[joint] = -0.497 if not grip_stuff else -1.57 # Should match src/shared/util.tsx
-        elif joint == Joint.WRIST_ROLL and not grip_stuff:
+            retval[joint] = -0.497 # Should match src/shared/util.tsx
+        elif joint == Joint.WRIST_ROLL:
             retval[joint] = 0.0  # Should match src/shared/util.tsx
-        elif joint == Joint.GRIPPER_LEFT and not grip_stuff:
+        elif joint == Joint.GRIPPER_LEFT:
             retval[
                 joint
             ] = 0.0  # close gripper when stowed. An open gripper can sometimes get caught in the mast.

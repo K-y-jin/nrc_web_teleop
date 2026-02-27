@@ -19,11 +19,11 @@ while getopts m:t:f opt; do
     esac
 done
 
-timestamp='stretch_web_teleop_'`date '+%Y%m%d%H%M'`;
+timestamp='nrc_web_teleop_'`date '+%Y%m%d%H%M'`;
 logdir="$HOME/stretch_user/log/web_teleop/$timestamp"
 logfile_ros="$logdir/start_ros2.txt"
 logfile_node="$logdir/start_web_server_and_robot_browser.txt"
-logzip="$logdir/stretch_web_teleop_logs.zip"
+logzip="$logdir/nrc_web_teleop_logs.zip"
 mkdir -p $logdir
 
 function echo_failure_help {

@@ -30,22 +30,22 @@ from tf_transformations import quaternion_about_axis, quaternion_multiply
 
 # Local Imports
 from nrc_web_teleop.action import MoveToPregrasp
-from stretch_web_teleop_helpers.constants import (
+from nrc_web_teleop_helpers.constants import (
     Frame,
     Joint,
     adjust_arm_lift_for_base_collision,
     get_pregrasp_wrist_configuration,
     get_stow_configuration,
 )
-from stretch_web_teleop_helpers.conversions import (
+from nrc_web_teleop_helpers.conversions import (
     deproject_pixel_to_pointcloud_point,
     depth_img_to_pointcloud,
     remaining_time,
     ros_msg_to_cv2_image,
     tf2_transform,
 )
-from stretch_web_teleop_helpers.move_to_pregrasp_state import MoveToPregraspState
-from stretch_web_teleop_helpers.stretch_ik_control import (
+from nrc_web_teleop_helpers.move_to_pregrasp_state import MoveToPregraspState
+from nrc_web_teleop_helpers.stretch_ik_control import (
     MotionGeneratorRetval,
     StretchIKControl,
 )
@@ -667,7 +667,6 @@ class MoveToPregraspNode(Node):
             )
             if not ok:
                 continue  # skip the below code and go to the next distance
-            self.get_logger().info(f"Goal Pose: {goal_pose}")
 
             # Verify the goal is reachable, seeded with the estimate base rotation.
             wrist_rotation = get_pregrasp_wrist_configuration(horizontal_grasp)

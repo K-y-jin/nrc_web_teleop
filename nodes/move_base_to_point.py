@@ -226,7 +226,7 @@ class MoveBaseToPointNode(Node):
 
         # Execute the states
         motion_executors: List[Generator[MotionGeneratorRetval, None, None]] = []
-        states = MoveBaseToPointState.get_state_machine(setup_mode=True)
+        states = MoveBaseToPointState.get_state_machine()
         self.get_logger().info(f"All States: {states}")
 
         state_i = 0
@@ -237,7 +237,7 @@ class MoveBaseToPointNode(Node):
         initial_head_pan = initial_head_joint_states[Joint.HEAD_PAN]
         initial_head_tilt = initial_head_joint_states[Joint.HEAD_TILT]
 
-        pan_theta = -1.0 * np.arctan2(raw_scaled_u - 0.5, 0.5) # HFOV 90deg
+        target_theta = -1.0 * np.arctan2(raw_scaled_u - 0.5, 0.5) # HFOV 90deg
         beta = np.pi * (127.0/180.0) # VFOV 127deg
         focal_length = 0.5 / np.tan(beta/2.0)
         alpha = -1.0 * np.arctan2(raw_scaled_v-0.5, focal_length)  # tan(alpha) = (y-0.5) / focal_length
@@ -251,8 +251,8 @@ class MoveBaseToPointNode(Node):
         self.get_logger().info(f"##### x_dist: {x_dist}")
 
         goal_positions = {}
-        goal_positions[Joint.BASE_ROTATION] = initial_head_pan + pan_theta
-        goal_positions[Joint.HEAD_PAN] = pan_theta
+        goal_positions[Joint.BASE_ROTATION] = initial_head_pan + target_theta
+        goal_positions[Joint.HEAD_PAN] = 0.0
         goal_positions[Joint.HEAD_TILT] = tilt_theta
         goal_positions[Joint.BASE_TRANSLATION] = x_dist
         

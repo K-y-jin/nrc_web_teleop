@@ -381,7 +381,24 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
                     },
                 };
             case UnderVideoButton.MoveGripperToPointGoalReached:
-                return {};
+                return {
+                    getFuture: () => {
+                        let currentTimestamp = Date.now();
+                        let that = this;
+                        const promise = new Promise((resolve, reject) => {
+                            let interval = setInterval(() => {
+                                let goalReached =
+                                    that.lastMoveGripperToPointStateTimestamp >
+                                    currentTimestamp;
+                                if (goalReached) {
+                                    clearInterval(interval);
+                                    resolve(true);
+                                }
+                            });
+                        });
+                        return promise;
+                    },
+                };
             case UnderVideoButton.CancelMoveGripperToPoint:
                 // TODO:
                 return {

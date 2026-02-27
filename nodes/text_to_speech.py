@@ -13,7 +13,7 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy
 
 # Local Imports
 from nrc_web_teleop.msg import TextToSpeech
-from stretch_web_teleop_helpers.text_to_speech_helpers import (
+from nrc_web_teleop_helpers.text_to_speech_helpers import (
     GTTS,
     PyTTSx3,
     TextToSpeechEngine,
