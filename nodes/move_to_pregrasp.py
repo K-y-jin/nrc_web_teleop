@@ -44,7 +44,7 @@ from nrc_web_teleop_helpers.conversions import (
     ros_msg_to_cv2_image,
     tf2_transform,
 )
-from nrc_web_teleop_helpers.move_to_pregrasp_state import MoveToPregraspState
+from nrc_web_teleop_helpers.move_to_action_state import MoveToActionState
 from nrc_web_teleop_helpers.stretch_ik_control import (
     MotionGeneratorRetval,
     StretchIKControl,
@@ -358,6 +358,18 @@ class MoveToPregraspNode(Node):
                 MoveToPregrasp.Result.STATUS_GOAL_NOT_REACHABLE,
             )
 
+        # HEAD_PAN calcuation moved from move_to_pregrasp_state.py
+        desired_base_rotation = ik_solution[Joint.BASE_ROTATION]
+        curr_head_pan = self.controller.get_current_joints()[Joint.HEAD_PAN]
+        # The head should rotate in the opposite direction of the base, to
+        # keep the field of view roughly the same
+        target_head_pan = curr_head_pan - desired_base_rotation
+        while target_head_pan < self.controller.joint_pos_lim[Joint.HEAD_PAN][0]:
+            target_head_pan += 2.0 * np.pi
+        while target_head_pan > self.controller.joint_pos_lim[Joint.HEAD_PAN][1]:
+            target_head_pan -= 2.0 * np.pi
+        ik_solution[Joint.HEAD_PAN] = target_head_pan
+
         # Raise the arm lift if it is too low and the wrist would collide with the base
         adjust_arm_lift_for_base_collision(ik_solution, horizontal_grasp)
 
@@ -428,7 +440,7 @@ class MoveToPregraspNode(Node):
                         else:  # CONTINUE
                             pass
                     if len(motion_executors) == 0:
-                        if MoveToPregraspState.ROTATE_BASE in concurrent_states:
+                        if MoveToActionState.ROTATE_BASE in concurrent_states:
                             # If we just completed the rotate base motion, update the goal yaw
                             # so future IK is correct.
                             self.update_goal_orientation(
@@ -921,7 +933,7 @@ class MoveToPregraspNode(Node):
 
     def get_states(
         self, horizontal_grasp: bool, ik_solution: Dict[Joint, float]
-    ) -> List[List[MoveToPregraspState]]:
+    ) -> List[List[MoveToActionState]]:
         """
         Get the states to execute to move the robot to the goal pose.
 
@@ -932,7 +944,7 @@ class MoveToPregraspNode(Node):
 
         Returns
         -------
-        List[MoveToPregraspState]: The states to execute.
+        List[MoveToActionState]: The states to execute.
         """
         # Get the current joints
         init_joints = self.controller.get_current_joints()
@@ -944,7 +956,7 @@ class MoveToPregraspNode(Node):
 
         # Get the states. If the robot is in a vertical grasp position and the arm
         # needs to descend, lengthn the arm before deploying the wrist.
-        states = MoveToPregraspState.get_state_machine(
+        states = MoveToActionState.get_state_for_pregrasp_action(
             horizontal_grasp=horizontal_grasp,
             init_lift_near_base=init_joints[Joint.ARM_LIFT] < arm_lift_when_stowed,
             goal_lift_near_base=ik_solution[Joint.ARM_LIFT] < arm_lift_when_stowed,
@@ -953,11 +965,11 @@ class MoveToPregraspNode(Node):
         )
 
         # Ensure the terminal state is the last state
-        if not (len(states[-1]) == 1 and MoveToPregraspState.TERMINAL in states[-1]):
+        if not (len(states[-1]) == 1 and MoveToActionState.TERMINAL in states[-1]):
             self.get_logger().error(
                 "Terminal state is not the last state. Adding it in."
             )
-            states.append([MoveToPregraspState.TERMINAL])
+            states.append([MoveToActionState.TERMINAL])
         self.get_logger().debug(f"All States: {states}")
 
         return states

@@ -33,7 +33,7 @@ from nrc_web_teleop_helpers.constants import (
 from nrc_web_teleop_helpers.conversions import (
     remaining_time,
 )
-from nrc_web_teleop_helpers.move_gripper_to_point_state import MoveGripperToPointState
+from nrc_web_teleop_helpers.move_to_action_state import MoveToActionState
 from nrc_web_teleop_helpers.stretch_ik_control import (
     MotionGeneratorRetval,
     StretchIKControl,
@@ -126,13 +126,13 @@ class MoveGripperToPointNode(Node):
                 return GoalResponse.REJECT
 
         # Reject the goal is there is already an active goal
-        # with self.active_goal_request_lock:
-        #     if self.active_goal_request is not None:
+        with self.active_goal_request_lock:
+            if self.active_goal_request is not None:
                 
-        #         self.get_logger().info(
-        #             "Rejecting goal request since there is already an active one"
-        #         )
-        #         return GoalResponse.REJECT
+                self.get_logger().info(
+                    "Rejecting goal request since there is already an active one"
+                )
+                return GoalResponse.REJECT
 
         # Accept the goal
         self.get_logger().info("Accepting goal request")
@@ -226,7 +226,7 @@ class MoveGripperToPointNode(Node):
 
         # Execute the states
         motion_executors: List[Generator[MotionGeneratorRetval, None, None]] = []
-        states = MoveGripperToPointState.get_state_machine()
+        states = MoveToActionState.get_state_machine()
         self.get_logger().info(f"All States: {states}")
 
         state_i = 0

@@ -1,3 +1,4 @@
+from nrc_web_teleop_helpers.stretch_ik_control import StretchIKControl
 import pinocchio as pin
 from pinocchio.visualize import MeshcatVisualizer
 from nrc_web_teleop_helpers.constants import Joint, Frame
@@ -59,5 +60,6 @@ for i in range(model.nframes):
 # base link 프레임을 기준으로 한 프레임 변환 계산
 # CompressedImage 객체는 header.frame_id에서 수집된 Image의 프레임 id를 포함.
 base_link_frame_id = Frame.BASE_LINK.value
+
 # get_goal_pose (goal pose in camera frame을 base link frame으로 변환)
 # pose_transformed = tf_buffer.transform(pose, target_frame, timeout)

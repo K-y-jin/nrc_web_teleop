@@ -93,6 +93,7 @@ export const CameraView = (props: CustomizableComponentProps) => {
         if (state.alert_type == "success") {
             setIsMovingBaseToPoint(false);
         }
+        setSelectLocationScaledXY(null);
     }
     underVideoFunctionProvider.setMoveBaseToPointOperatorCallbackSub(
         moveBaseToPointStateCallback
@@ -102,6 +103,7 @@ export const CameraView = (props: CustomizableComponentProps) => {
         if (state.alert_type == "success") {
             setIsMovingGripperToPoint(false);
         }
+        setSelectLocationScaledXY(null);
     }
     underVideoFunctionProvider.setMoveGripperToPointOperatorCallbakcSub(
         moveGripperToPointStateCallback

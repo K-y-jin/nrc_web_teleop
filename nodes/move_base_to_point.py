@@ -9,6 +9,9 @@ from typing import Callable, Dict, Generator, List, Optional, Tuple
 import cv2
 import numpy as np
 import numpy.typing as npt
+from geometry_msgs.msg import Point, Quaternion, PoseStamped
+from std_msgs.msg import Header
+
 import rclpy
 
 # Third-Party Imports
@@ -33,7 +36,7 @@ from nrc_web_teleop_helpers.constants import (
 from nrc_web_teleop_helpers.conversions import (
     remaining_time,
 )
-from nrc_web_teleop_helpers.move_base_to_point_state import MoveBaseToPointState
+from nrc_web_teleop_helpers.move_to_action_state import MoveToActionState
 from nrc_web_teleop_helpers.stretch_ik_control import (
     MotionGeneratorRetval,
     StretchIKControl,
@@ -126,13 +129,13 @@ class MoveBaseToPointNode(Node):
                 return GoalResponse.REJECT
 
         # Reject the goal is there is already an active goal
-        # with self.active_goal_request_lock:
-        #     if self.active_goal_request is not None:
+        with self.active_goal_request_lock:
+            if self.active_goal_request is not None:
                 
-        #         self.get_logger().info(
-        #             "Rejecting goal request since there is already an active one"
-        #         )
-        #         return GoalResponse.REJECT
+                self.get_logger().info(
+                    "Rejecting goal request since there is already an active one"
+                )
+                return GoalResponse.REJECT
 
         # Accept the goal
         self.get_logger().info("Accepting goal request")
@@ -205,18 +208,18 @@ class MoveBaseToPointNode(Node):
         # Initialize the feedback
         feedback = MoveBaseToPoint.Feedback()
 
-        goal_point = None
         # Get the initial goal point
         raw_scaled_u, raw_scaled_v = (
             goal_handle.request.scaled_u,
             goal_handle.request.scaled_v,
         )
-        goal_point = np.array([raw_scaled_u, raw_scaled_v])
-        self.get_logger().debug(f"##### Initial Goal Point: {goal_point}")
 
         with self.latest_navigation_camera_image_lock:
             image_msg = self.latest_navigation_camera_image
-        header = image_msg.header
+        
+        # 
+        goal_pose = PoseStamped()
+        goal_pose.header = image_msg.header
 
         # Publich_feedback message
         def publish_update_goal_point_feedback():
@@ -226,13 +229,14 @@ class MoveBaseToPointNode(Node):
 
         # Execute the states
         motion_executors: List[Generator[MotionGeneratorRetval, None, None]] = []
-        states = MoveBaseToPointState.get_state_machine()
+        states = MoveToActionState.get_state_for_move_base_to_point()
         self.get_logger().info(f"All States: {states}")
 
         state_i = 0
         rate = self.create_rate(5.0)  # 5 Hz
 
         # Calculate the goal positions
+        # Head Pan 회전축이 Base Rotation 축과 동일하다는 가정이 깔려있다. 
         initial_head_joint_states = self.controller.get_head_joint_states()
         initial_head_pan = initial_head_joint_states[Joint.HEAD_PAN]
         initial_head_tilt = initial_head_joint_states[Joint.HEAD_TILT]
@@ -283,7 +287,7 @@ class MoveBaseToPointNode(Node):
                 for state in concurrent_states:
                     motion_executor = state.get_motion_executor(
                         controller=self.controller,
-                        header=header,
+                        goal_pose=goal_pose,
                         ik_solution=goal_positions,
                         timeout_secs=remaining_time(
                             self.get_clock().now(),

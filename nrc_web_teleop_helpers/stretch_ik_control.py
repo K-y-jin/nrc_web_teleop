@@ -529,6 +529,7 @@ class StretchIKControl:
         get_cartesian_mask: Optional[
             Callable[[npt.NDArray[float]], npt.NDArray[bool]]
         ] = None,
+        success_callback: Optional[Callable[[npt.NDArray[float]], None]] = None,
     ) -> Generator[MotionGeneratorRetval, None, None]:
         """
         Move the end-effector to the goal pose. This function uses closed-loop inverse
@@ -681,7 +682,12 @@ class StretchIKControl:
             # Yield control back to the main action loop
             yield MotionGeneratorRetval.CONTINUE
 
-        yield MotionGeneratorRetval.FAILURE if check_cancel() else MotionGeneratorRetval.SUCCESS
+        if check_cancel():
+            yield MotionGeneratorRetval.FAILURE
+        else:
+            if success_callback is not None:
+                success_callback()
+            yield MotionGeneratorRetval.SUCCESS
         return
 
     def rotate_base_to_goal_pose(
