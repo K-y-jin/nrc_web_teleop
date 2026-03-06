@@ -32,6 +32,7 @@ from sensor_msgs.msg import CameraInfo, CompressedImage
 from nrc_web_teleop.action import MoveBaseToPoint
 from nrc_web_teleop_helpers.constants import (
     Joint,
+    Frame,
 )
 from nrc_web_teleop_helpers.conversions import (
     remaining_time,
@@ -60,6 +61,8 @@ class MoveBaseToPointNode(Node):
         self.static_transform_broadcaster = tf2_ros.StaticTransformBroadcaster(self)
         self.lift_offset: Optional[Tuple[float, float]] = None
         self.wrist_offset: Optional[Tuple[float, float]] = None
+        self.pan_offset: Optional[Tuple[float, float]] = None
+        self.cam_height = None
 
         # Create the inverse jacobian controller to execute motions
         urdf_fpaths = uu.generate_ik_urdfs("nrc_web_teleop", rigid_wrist_urdf=False)
@@ -157,6 +160,12 @@ class MoveBaseToPointNode(Node):
         self, goal_handle: ServerGoalHandle
     ) -> MoveBaseToPoint.Result:
     
+        # Start the timer
+        start_time = self.get_clock().now()
+
+        # Initialize the feedback
+        feedback = MoveBaseToPoint.Feedback()
+        
         # Functions to cleanup the action
         terminate_motion_executors = False
         motion_executors: List[Generator[MotionGeneratorRetval, None, None]] = []
@@ -202,12 +211,6 @@ class MoveBaseToPointNode(Node):
             cleanup()
             return MoveBaseToPoint.Result(status=MoveBaseToPoint.Result.STATUS_CANCELLED)
 
-        # Start the timer
-        start_time = self.get_clock().now()
-
-        # Initialize the feedback
-        feedback = MoveBaseToPoint.Feedback()
-
         # Get the initial goal point
         raw_scaled_u, raw_scaled_v = (
             goal_handle.request.scaled_u,
@@ -235,6 +238,21 @@ class MoveBaseToPointNode(Node):
         state_i = 0
         rate = self.create_rate(5.0)  # 5 Hz
 
+        if self.pan_offset is None:
+            T = self.controller.get_transform(
+                parent_link=Frame.BASE_LINK, child_link=Frame.HEAD_PAN_LINK
+            )
+            self.pan_offset = (T[0, 3], T[1, 3])
+            self.get_logger().debug(f"Pan offset (x, y): {self.pan_offset}")
+
+        if self.cam_height is None:
+            T = self.controller.get_transform(
+                parent_link=Frame.BASE_LINK, child_link=Frame.CAMERA_COLOR_FRAME
+            )
+            self.cam_height = T[2, 3]
+            self.get_logger().info(f"cam_height: {self.cam_height}")
+            self.cam_height = T[2, 3]
+
         # Calculate the goal positions
         # Head Pan 회전축이 Base Rotation 축과 동일하다는 가정이 깔려있다. 
         initial_head_joint_states = self.controller.get_head_joint_states()
@@ -247,23 +265,29 @@ class MoveBaseToPointNode(Node):
         alpha = -1.0 * np.arctan2(raw_scaled_v-0.5, focal_length)  # tan(alpha) = (y-0.5) / focal_length
         tilt_theta = -np.pi * (33.0/180.0) # -33deg down # unseen x is zero when 33deg down
         feedback.new_scaled_u = 0.5
-        feedback.new_scaled_v = focal_length * np.tan(tilt_theta - (initial_head_tilt+alpha)) + 0.5
+        feedback.new_scaled_v = focal_length * np.tan(tilt_theta - (initial_head_tilt + alpha)) + 0.5
         
         alpha = np.arctan2(0.5 - feedback.new_scaled_v, focal_length)
-        height = 1.24 # about 1 m
-        x_dist = height * np.tan(np.pi/2 + tilt_theta + alpha)
+        if tilt_theta + alpha < 0:
+            x_dist = self.cam_height * np.tan(np.pi/2 + tilt_theta + alpha)
+        else:
+            x_dist = 0.0
+
         self.get_logger().info(f"##### x_dist: {x_dist}")
 
         goal_positions = {}
-        goal_positions[Joint.BASE_ROTATION] = initial_head_pan + target_theta
+        if initial_head_pan + target_theta < np.pi:
+            goal_positions[Joint.BASE_ROTATION] = initial_head_pan + target_theta
+        else:
+            goal_positions[Joint.BASE_ROTATION] = initial_head_pan + target_theta - 2*np.pi
         goal_positions[Joint.HEAD_PAN] = 0.0
         goal_positions[Joint.HEAD_TILT] = tilt_theta
         goal_positions[Joint.BASE_TRANSLATION] = x_dist
         
         def update_feedback_and_publish_feedback(distance_error: float):
-            nonlocal tilt_theta, beta, focal_length, height
+            nonlocal tilt_theta, beta, focal_length
             feedback.elapsed_time = (self.get_clock().now() - start_time).to_msg()
-            alpha = np.arctan2(distance_error, height) - beta/2
+            alpha = np.arctan2(distance_error, self.cam_height) - beta/2
             feedback.new_scaled_v = 0.5 - focal_length * np.tan(alpha)
             feedback.new_scaled_u = 0.5
             # self.get_logger().info(f"##### Feedback: {distance_error}")

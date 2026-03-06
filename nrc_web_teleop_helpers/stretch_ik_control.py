@@ -181,6 +181,14 @@ class StretchIKControl:
             callback_group=MutuallyExclusiveCallbackGroup(),
         )
 
+        # Create a service client to switch to position mode
+        position_mode = ControlMode.POSITION
+        self.switch_to_position_client = self.node.create_client(
+            Trigger,
+            position_mode.get_service_name(),
+            callback_group=MutuallyExclusiveCallbackGroup(),
+        )
+
         # Create a publisher and action client to command robot motion
         self.base_vel_pub = self.node.create_publisher(
             Twist,
@@ -299,6 +307,9 @@ class StretchIKControl:
             if joint_name == Joint.COMBINED_ARM:
                 joint_name = Joint.ARM_L0
             self.joint_pos_lim[joint_name] = (min_pos, max_pos)
+            self.node.get_logger().info(
+                f"##### Joint name: {joint_name}, min_pos: {min_pos}, max_pos: {max_pos}"
+            )
         self.joint_pos_lim[Joint.BASE_ROTATION] = (-np.pi, np.pi)
 
         return True
@@ -389,6 +400,12 @@ class StretchIKControl:
         # Start the timer
         start_time = self.node.get_clock().now()
         timeout = Duration(seconds=timeout_secs)
+
+        if Joint.WRIST_YAW in joint_positions or Joint.COMBINED_ARM in joint_positions or Joint.ARM_LIFT in joint_positions:
+            # Set position mode
+            if not self.set_position_mode(timeout = Duration(seconds=3.0)):
+                yield MotionGeneratorRetval.FAILURE
+                return
 
         # Limit the joint positions
         _, joint_positions = self.check_joint_limits(joint_positions)
@@ -567,6 +584,12 @@ class StretchIKControl:
         self.node.get_logger().debug(
             f"Joint position overrides: {joint_position_overrides}"
         )
+
+        # Set navigation mode
+        if not self.set_navigation_mode(timeout = Duration(seconds=3.0)):
+            yield MotionGeneratorRetval.FAILURE
+            return
+        
         articulated_joints = [
             joint_name
             for joint_name in articulated_joints
@@ -784,7 +807,7 @@ class StretchIKControl:
             self.node.get_logger().debug(f"##### Base Yaw Error: {err[0]}")
 
             # Calculate the joint velocities
-            K_base_rotation = 1.0
+            K_base_rotation = 2.0
             vel = np.zeros(len(self.controllable_joints), dtype=float)
             vel[0] = K_base_rotation * err[0]  # rad/s
             self.node.get_logger().debug(f"##### Base Rotation Velocity: {vel[0]}, Error: {err[0]}")
@@ -932,7 +955,7 @@ class StretchIKControl:
         """
         start_time = self.node.get_clock().now()
         # Invoke the service
-        self.node.get_logger().info("Switching to navigation mode...")
+        self.node.get_logger().debug("Switching to navigation mode...")
         ready = self.switch_to_navigation_client.wait_for_service(
             timeout_sec=timeout.nanoseconds / 1.0e9
         )
@@ -958,6 +981,50 @@ class StretchIKControl:
             result = future.result()
             if not result.success:
                 self.node.get_logger().error("Failed to switch to navigation mode.")
+                return False
+        return True
+
+    def set_position_mode(self, timeout: Duration, rate_hz: float = 10.0) -> bool:
+        """
+        Set the control mode to position control.
+
+        Parameters
+        ----------
+        timeout: The timeout.
+        rate_hz: The rate in Hz at which to control the robot.
+
+        Returns
+        -------
+        bool: True if the control mode was successfully set.
+        """
+        start_time = self.node.get_clock().now()
+        # Invoke the service
+        self.node.get_logger().debug("Switching to position control mode...")
+        ready = self.switch_to_position_client.wait_for_service(
+            timeout_sec=timeout.nanoseconds / 1.0e9
+        )
+        if not ready:
+            self.node.get_logger().error(
+                f"Service {self.switch_to_position_client.srv_name} not available."
+            )
+            return False
+        future = self.switch_to_position_client.call_async(Trigger.Request())
+        rate = self.node.create_rate(rate_hz)
+        while rclpy.ok() and not future.done():
+            # Check if we've reached timeout
+            if (
+                remaining_time(
+                    self.node.get_clock().now(), start_time, timeout, return_secs=True
+                )
+                <= 0.0
+            ):
+                self.node.get_logger().error("Failed to switch to position control mode.")
+                return False
+            rate.sleep()
+        if future.done():
+            result = future.result()
+            if not result.success:
+                self.node.get_logger().error("Failed to switch to position control mode.")
                 return False
         return True
 

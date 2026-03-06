@@ -62,6 +62,10 @@ class Frame(Enum):
     L0_LINK = "link_arm_l0"
     WRIST_PITCH_LINK = "link_wrist_pitch"
     ODOM = "odom"
+    CAMERA_COLOR_FRAME = "camera_color_frame"
+    CAMERA_DEPTH_FRAME = "camera_depth_frame"
+    HEAD_PAN_LINK = "link_head_pan"
+
 
 
 class ControlMode(Enum):
@@ -205,5 +209,5 @@ def get_gripper_configuration(closed: bool) -> Dict[Joint, float]:
         # We only need to command one gripper joint, as the other is coupled.
         Joint.GRIPPER_LEFT: 0.0
         if closed
-        else 0.84,
+        else 0.55 #0.84, # -0.6에서 0.6 가능인데. 양쪽을 합하는 것인가?
     }

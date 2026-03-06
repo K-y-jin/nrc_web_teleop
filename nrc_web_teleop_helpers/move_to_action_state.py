@@ -2,6 +2,7 @@ from __future__ import annotations  # Required for type hinting a class within i
 
 # Standard imports
 from enum import Enum
+from builtin_interfaces.msg import Time
 from typing import Callable, Dict, Generator, List, Optional
 
 # Third-party imports
@@ -50,8 +51,9 @@ class MoveToActionState(Enum):
     LENGTHEN_ARM = 7
     HEAD_TILT = 8
     ROTATE_BASE_SIMPLE = 9
-    MOVE_BASE = 10
-    TERMINAL = 11
+    LENGTHEN_ARM_SIMPLE = 10
+    MOVE_BASE = 11
+    TERMINAL = 12
     @staticmethod
     def get_state_for_pregrasp_action(
         horizontal_grasp: bool,
@@ -112,6 +114,18 @@ class MoveToActionState(Enum):
         states.append([MoveToActionState.HEAD_TILT])
         states.append([MoveToActionState.ROTATE_BASE_SIMPLE, MoveToActionState.HEAD_PAN])
         states.append([MoveToActionState.MOVE_BASE])
+        states.append([MoveToActionState.TERMINAL])
+        return states
+
+    def get_state_for_move_gripper_to_point() -> List[List[MoveToActionState]]:
+        states = []
+        states.append([MoveToActionState.STOW_ARM_LENGTH_FULL])
+        states.append([MoveToActionState.STOW_WRIST, MoveToActionState.STOW_ARM_LIFT])
+        states.append([MoveToActionState.HEAD_TILT])
+        states.append([MoveToActionState.ROTATE_BASE_SIMPLE, MoveToActionState.HEAD_PAN])
+        states.append([MoveToActionState.LIFT_ARM])
+        states.append([MoveToActionState.MOVE_WRIST])
+        states.append([MoveToActionState.LENGTHEN_ARM_SIMPLE])
         states.append([MoveToActionState.TERMINAL])
         return states
 
@@ -183,13 +197,20 @@ class MoveToActionState(Enum):
                 Joint.BASE_ROTATION
             ][1]
         elif self == MoveToActionState.LIFT_ARM:
+            if ik_solution[Joint.ARM_LIFT] is None:
+                ik_solution[Joint.ARM_LIFT] = err_callback[1]()
             joints_for_position_control[Joint.ARM_LIFT] = ik_solution[Joint.ARM_LIFT]
         elif self == MoveToActionState.MOVE_WRIST:
-            joints_for_position_control.update(get_gripper_configuration(closed=False))
+            # Simulation에서 gripper position control이 잘 안 됨.
+            # joints_for_position_control.update(get_gripper_configuration(closed=False))
             joints_for_position_control.update(
                 get_pregrasp_wrist_configuration(horizontal_grasp)
             )
         elif self == MoveToActionState.LENGTHEN_ARM:
+            joints_for_position_control[Joint.ARM_L0] = ik_solution[Joint.ARM_L0]
+        elif self == MoveToActionState.LENGTHEN_ARM_SIMPLE:
+            if ik_solution[Joint.ARM_L0] is None:
+                ik_solution[Joint.ARM_L0] = err_callback[2]() - 0.5 # gripper length 고려 
             joints_for_position_control[Joint.ARM_L0] = ik_solution[Joint.ARM_L0]
         elif self == MoveToActionState.HEAD_TILT:
             joints_for_position_control[Joint.HEAD_TILT] = ik_solution[Joint.HEAD_TILT] # 33deg down
@@ -197,7 +218,7 @@ class MoveToActionState(Enum):
         elif self == MoveToActionState.MOVE_BASE:
             error_callback_temp = err_callback[0]
             # move base to the goal point
-            goal_pose.header.stamp = controller.node.get_clock().now().to_msg()
+            goal_pose.header.stamp = Time() # controller.node.get_clock().now().to_msg()
             goal_pose.header.frame_id = "base_link"
             goal_pose.pose.position = Point(x=ik_solution[Joint.BASE_TRANSLATION], y=0.0, z=0.0)
             goal_pose.pose.orientation = Quaternion(x=1.0, y=0.0, z=0.0, w=0.0)
@@ -213,6 +234,7 @@ class MoveToActionState(Enum):
             )
         elif self == MoveToActionState.ROTATE_BASE_SIMPLE:
             success_callback_temp = success_callback[0]
+            goal_pose.header.stamp = Time() # latest
             goal_pose.header.frame_id = "base_link"
 
             goal_pose.pose.position = Point(x=0.0, y=0.0, z=0.0)
