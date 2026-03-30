@@ -16,8 +16,8 @@ export type cmd =
     | StopMoveBaseCommand
     | MoveToPregraspCommand
     | StopMoveToPregraspCommand
-    | MoveToPointCommand
-    | StopMoveToPointCommand
+    | MoveBaseToPointCommand
+    | StopMoveBaseToPointCommand
     | PlaybackPosesCommand
     | GetBatteryVoltageCommand
     | GetHasBetaTeleopKit

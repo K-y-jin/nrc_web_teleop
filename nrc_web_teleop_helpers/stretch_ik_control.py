@@ -307,7 +307,7 @@ class StretchIKControl:
             if joint_name == Joint.COMBINED_ARM:
                 joint_name = Joint.ARM_L0
             self.joint_pos_lim[joint_name] = (min_pos, max_pos)
-            self.node.get_logger().info(
+            self.node.get_logger().debug(
                 f"##### Joint name: {joint_name}, min_pos: {min_pos}, max_pos: {max_pos}"
             )
         self.joint_pos_lim[Joint.BASE_ROTATION] = (-np.pi, np.pi)
@@ -459,7 +459,7 @@ class StretchIKControl:
             # reaches the goal but stretch_driver doesn't realize it has reached the goal
             # so keeps waiting until timeout.
             if len(joint_positions_cmd) == 0:
-                cleanup()
+                # cleanup()
                 yield MotionGeneratorRetval.SUCCESS
                 return
             # Command the robot to move to the joint positions
@@ -514,7 +514,7 @@ class StretchIKControl:
 
             yield MotionGeneratorRetval.CONTINUE
 
-        cleanup()
+        # cleanup()
         yield MotionGeneratorRetval.FAILURE if check_cancel() else MotionGeneratorRetval.SUCCESS
         return
 

@@ -48,6 +48,7 @@ from nrc_web_teleop_helpers.stretch_ik_control import (
 )
 from nrc_web_teleop_helpers.ggcnn import utils
 from nrc_web_teleop_helpers.ggcnn.ggcnn_torch import predict
+from nrc_web_teleop_helpers.da.depth_pred import get_pred_depth
 
 class MoveGripperToPointNode(Node):
 
@@ -543,7 +544,7 @@ class MoveGripperToPointNode(Node):
         # Failed to execute MoveGripperToPoint
         return action_error_callback("Failed to execute MoveGripperToPoint")
 
-    def save_cnn_images(self, save_gripper: bool = False):
+    def save_cnn_images(self, save_gripper: bool = False, save_ggcnn: bool =False):
         # D435 30 cm 이상부터 측정 가능. 최대 3 m
         with self.latest_realsense_rgb_lock:
             rgb_msg = self.latest_realsense_rgb
@@ -567,26 +568,29 @@ class MoveGripperToPointNode(Node):
             
         utils.save_image(depth_image, "head_depth")
         utils.save_image(rgb_image, "head_rgb")
+        pred_depth = get_pred_depth(rgb_image)
+        utils.save_image(pred_depth, "head_pred")
 
-        depth_nan_mask = depth_image == 0
-        depth_image = (depth_image/255.0).astype(np.float32)
-        q_out, ang_out, width_out, depth_out = predict(
-            depth_image, process_depth=True, crop_size=None, out_size=300,
-            depth_nan_mask=depth_nan_mask, crop_y_offset=0,
-            filters= (False, False, False) # (2.0, 1.0, 1.0)
-        )
-        image_size = (depth_image.shape[1], depth_image.shape[0])
-        q_out = (q_out - q_out.min()) / (q_out.max() - q_out.min())
-        q_out = cv2.resize((255.0*np.clip(q_out, 0.0, 1.0)).astype(np.uint8), image_size, cv2.INTER_AREA)
-        ang_out = (ang_out + np.pi/2)/np.pi
-        ang_out = cv2.resize((255.0*np.clip(ang_out, 0.0, 1.0)).astype(np.uint8), image_size, cv2.INTER_AREA)
-        width_out = (width_out - width_out.min()) / (width_out.max() - width_out.min())
-        width_out = cv2.resize((255.0*np.clip(width_out, 0.0, 1.0)).astype(np.uint8), image_size, cv2.INTER_AREA)
-        depth_out = cv2.resize((255.0*np.clip(depth_out, 0.0, 1.0)).astype(np.uint8), image_size, cv2.INTER_AREA)
-        utils.save_image(q_out, "points_out")
-        utils.save_image(ang_out, "ang_out")
-        utils.save_image(width_out, "width_out")
-        utils.save_image(depth_out, "processed_depth")
+        if save_ggcnn:
+            depth_nan_mask = depth_image == 0
+            depth_image = (depth_image/255.0).astype(np.float32)
+            q_out, ang_out, width_out, depth_out = predict(
+                depth_image, process_depth=True, crop_size=None, out_size=300,
+                depth_nan_mask=depth_nan_mask, crop_y_offset=0,
+                filters= (False, False, False) # (2.0, 1.0, 1.0)
+            )
+            image_size = (depth_image.shape[1], depth_image.shape[0])
+            q_out = (q_out - q_out.min()) / (q_out.max() - q_out.min())
+            q_out = cv2.resize((255.0*np.clip(q_out, 0.0, 1.0)).astype(np.uint8), image_size, cv2.INTER_AREA)
+            ang_out = (ang_out + np.pi/2)/np.pi
+            ang_out = cv2.resize((255.0*np.clip(ang_out, 0.0, 1.0)).astype(np.uint8), image_size, cv2.INTER_AREA)
+            width_out = (width_out - width_out.min()) / (width_out.max() - width_out.min())
+            width_out = cv2.resize((255.0*np.clip(width_out, 0.0, 1.0)).astype(np.uint8), image_size, cv2.INTER_AREA)
+            depth_out = cv2.resize((255.0*np.clip(depth_out, 0.0, 1.0)).astype(np.uint8), image_size, cv2.INTER_AREA)
+            utils.save_image(q_out, "points_out")
+            utils.save_image(ang_out, "ang_out")
+            utils.save_image(width_out, "width_out")
+            utils.save_image(depth_out, "processed_depth")
 
         if save_gripper:
             if gripper_rgb_image is None or gripper_depth_image is None:

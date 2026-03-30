@@ -17,12 +17,12 @@ model.load_state_dict(torch.load(path.join(path.dirname(__file__), MODEL_FILE)))
 
 # MODEL_FILE = ~/ament_ws/src/nrc_web_teleop/nrc_web_teleop_helpers/ggcnn/models/ggcnn_weights_cornell/ggcnn_epoch_23_cornell_statedict.pt
 
-def process_depth_image(depth, crop_size=None, out_size=300, return_mask=False, crop_y_offset=0):
+def process_depth_image(depth, crop_size=None, return_mask=False, crop_y_offset=0):
     imh, imw = depth.shape
-
+    print(imh, imw, (imh - crop_size) // 2 - crop_y_offset, (imh - crop_size) // 2 + crop_size - crop_y_offset)
     with TimeIt('1'):
         # Crop.
-        if isinstance(crop_size, int) and crop_size < imh and crop_size < imw and crop_size:
+        if isinstance(crop_size, int) and (imh - crop_size) // 2 - crop_y_offset > 0 and (imh - crop_size) // 2 + crop_size - crop_y_offset < imh and crop_size:
             depth_crop = depth[(imh - crop_size) // 2 - crop_y_offset:(imh - crop_size) // 2 + crop_size - crop_y_offset,
                            (imw - crop_size) // 2:(imw - crop_size) // 2 + crop_size]
         else:
@@ -33,6 +33,7 @@ def process_depth_image(depth, crop_size=None, out_size=300, return_mask=False, 
     # Inpaint
     # OpenCV inpainting does weird things at the border.
     with TimeIt('2'):
+        print(depth_crop.shape)
         depth_crop = cv2.copyMakeBorder(depth_crop, 1, 1, 1, 1, cv2.BORDER_DEFAULT)
         depth_nan_mask = np.isnan(depth_crop).astype(np.uint8)
 
@@ -51,14 +52,14 @@ def process_depth_image(depth, crop_size=None, out_size=300, return_mask=False, 
         depth_crop = depth_crop[1:-1, 1:-1]
         depth_crop = depth_crop * depth_scale
 
-    with TimeIt('5'):
-        # Resize
-        depth_crop = cv2.resize(depth_crop, (out_size, out_size), cv2.INTER_AREA)
+    # with TimeIt('5'):
+    #     # Resize
+    #     depth_crop = cv2.resize(depth_crop, (out_size, out_size), cv2.INTER_AREA)
 
     if return_mask:
-        with TimeIt('6'):
-            depth_nan_mask = depth_nan_mask[1:-1, 1:-1]
-            depth_nan_mask = cv2.resize(depth_nan_mask, (out_size, out_size), cv2.INTER_NEAREST)
+    #     with TimeIt('6'):
+    #         depth_nan_mask = depth_nan_mask[1:-1, 1:-1]
+    #         depth_nan_mask = cv2.resize(depth_nan_mask, (out_size, out_size), cv2.INTER_NEAREST)
         return depth_crop, depth_nan_mask
     else:
         return depth_crop
@@ -66,11 +67,13 @@ def process_depth_image(depth, crop_size=None, out_size=300, return_mask=False, 
 
 def predict(depth, process_depth=True, crop_size=300, out_size=300, depth_nan_mask=None, crop_y_offset=0, filters=(2.0, 1.0, 1.0)):
     if process_depth:
-        depth, depth_nan_mask = process_depth_image(depth, crop_size, out_size=out_size, return_mask=True, crop_y_offset=crop_y_offset)
+        depth, depth_nan_mask = process_depth_image(depth, crop_size, return_mask=True, crop_y_offset=crop_y_offset)
 
+    print(depth.shape)
     # Inference
     # depth = np.clip((depth - depth.mean()), -1, 1)
-    depthT = torch.from_numpy(depth.reshape(1, 1, out_size, out_size).astype(np.float32)).to(device)
+    depthT = torch.from_numpy(depth.reshape(1, 1, depth.shape[0], depth.shape[1]).astype(np.float32)).to(device)
+    # depthT = torch.from_numpy(depth.reshape(1, 1, out_size, out_size).astype(np.float32)).to(device)
     with torch.no_grad():
         pred_out = model(depthT)
 
@@ -101,4 +104,4 @@ def predict(depth, process_depth=True, crop_size=300, out_size=300, depth_nan_ma
 
     # points_out = (points_out - points_out.min())/(points_out.max() - points_out.min())
 
-    return points_out, ang_out, width_out, depth.squeeze()
+    return points_out, ang_out, width_out, depthT.squeeze().cpu().numpy()
