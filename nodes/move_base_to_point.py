@@ -243,7 +243,7 @@ class MoveBaseToPointNode(Node):
                 parent_link=Frame.BASE_LINK, child_link=Frame.HEAD_PAN_LINK
             )
             self.pan_offset = (T[0, 3], T[1, 3])
-            self.get_logger().info(f"Pan offset (x, y): {self.pan_offset}")
+            self.get_logger().debug(f"Pan offset (x, y): {self.pan_offset}")
 
         if self.cam_height is None:
             T = self.controller.get_transform(

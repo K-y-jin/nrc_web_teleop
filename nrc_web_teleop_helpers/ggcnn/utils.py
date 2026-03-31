@@ -12,11 +12,11 @@ from nrc_web_teleop_helpers.conversions import (
 from rclpy.node import Node
 
 def get_depth_image_from_msg(
-    depth_msg: Union[CompressedImage],
+    depth_msg: Union[CompressedImage, Image],
     cvBridge: CvBridge,
     measurement_min: float = 0.3, 
     measurement_max: float = 3.0,
-    )-> npt.NDArray[np.uint8]:
+    )-> npt.NDArray[np.uint16]:
     """
     D435 30 cm 이상부터 측정 가능. 최대 3 m
     D405 7 cm 이상부터 측정 가능. 최대 50 cm
@@ -24,11 +24,15 @@ def get_depth_image_from_msg(
     CompressedImage는 encoding=16UC1. 보통 mm
     """
     depth_image = ros_msg_to_cv2_image(depth_msg, cvBridge)
-    measurement_min = measurement_min*1000.0
+    measurement_min = 0.0 #measurement_min*1000.0
     measurement_max = measurement_max*1000.0
-    depth_image = (depth_image - measurement_min)/(measurement_max - measurement_min)*255.0
-    depth_image = np.clip(depth_image, 0, 255)
-    depth_image = (depth_image).astype(np.uint8)
+    # measurement_max = np.max(depth_image)
+    # measurement_min = np.min(depth_image)
+    depth_image = (depth_image - measurement_min)/(measurement_max - measurement_min)*65535.0
+    # depth_image = np.clip(depth_image, 0, 255)
+    # depth_image = (depth_image).astype(np.uint8)
+    depth_image = np.clip(depth_image, 0, 65535)
+    depth_image = (depth_image).astype(np.uint16)
     return depth_image
 
 def get_rgb_image_from_msg(
@@ -38,20 +42,20 @@ def get_rgb_image_from_msg(
     return ros_msg_to_cv2_image(rgb_msg, cvBridge)
 
 def save_image(
-        image: npt.NDArray[np.uint8],
+        image: Union[npt.NDArray[np.uint8], npt.NDArray[np.uint16]],
         filename_prefix: str,
-        output_dir: str = 'src/nrc_web_teleop/output',
+        output_dir: str = 'output',
     ):
 
-    output_dir = os.path.join(os.getcwd(), output_dir)
+    output_dir = os.path.join(os.path.dirname(__file__), output_dir)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    filename = f'{filename_prefix}_1.png'
+    filename = f'1_{filename_prefix}.png'
     i = 1
     output_path = os.path.join(output_dir, filename)
     while os.path.exists(output_path):
-        filename = f'{filename_prefix}_{i}.png'
+        filename = f'{i}_{filename_prefix}.png'
         output_path = os.path.join(output_dir, filename)
         i += 1
 

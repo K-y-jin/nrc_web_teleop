@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 # Standard Imports
-import sys
 import threading
 from tkinter import Y
 import traceback
@@ -9,7 +8,7 @@ from typing import Union, Generator, List, Optional, Tuple
 import cv2
 import numpy as np
 import numpy.typing as npt
-from geometry_msgs.msg import Point, Quaternion, PoseStamped
+from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Header
 
 import rclpy
@@ -21,7 +20,7 @@ import tf2_ros
 from cv_bridge import CvBridge
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.action.server import ServerGoalHandle
-from rclpy.callback_groups import ReentrantCallbackGroup, MutuallyExclusiveCallbackGroup
+from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.duration import Duration
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
@@ -39,7 +38,6 @@ from nrc_web_teleop_helpers.conversions import (
     depth_img_to_pointcloud,
     remaining_time,
     ros_msg_to_cv2_image,
-    tf2_transform,
 )
 from nrc_web_teleop_helpers.move_to_action_state import MoveToActionState
 from nrc_web_teleop_helpers.stretch_ik_control import (
@@ -48,7 +46,7 @@ from nrc_web_teleop_helpers.stretch_ik_control import (
 )
 from nrc_web_teleop_helpers.ggcnn import utils
 from nrc_web_teleop_helpers.ggcnn.ggcnn_torch import predict
-from nrc_web_teleop_helpers.da.depth_pred import get_pred_depth
+from nrc_web_teleop_helpers.da.utils import get_pred_depth
 
 class MoveGripperToPointNode(Node):
 
@@ -123,6 +121,7 @@ class MoveGripperToPointNode(Node):
 
         
         # Subscribe to the gripper camera's CompressedImage and depth feed
+        # Gripper Camera doesn't pulish aligned_depth_to_color
         self.latest_gripper_camera_rgb_image_lock = threading.Lock()
         self.latest_gripper_realsense_depth_image: Optional[CompressedImage] = None
         self.gripper_camera_rgb_subscriber = self.create_subscription(
@@ -134,9 +133,16 @@ class MoveGripperToPointNode(Node):
 
         self.latest_gripper_realsense_depth_image_lock = threading.Lock()
         self.latest_gripper_realsense_depth_image: Optional[CompressedImage] = None
+        # self.latest_gripper_realsense_depth_image: Optional[Image] = None
+        # self.gripper_depth_subscriber = self.create_subscription(
+        #     Image,
+        #     "/gripper_camera/depth/image_rect_raw",
+        #     self.gripper_realsense_depth_cb,
+        #     QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT),
+        # )
         self.gripper_depth_subscriber = self.create_subscription(
             CompressedImage,
-            "/gripper_camera/depth/image_rect_raw/compressed",
+            "/gripper_camera/depth/image_rect_raw/compressedDepth",
             self.gripper_realsense_depth_cb,
             QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT),
         )
@@ -145,7 +151,7 @@ class MoveGripperToPointNode(Node):
         self.latest_gripper_camera_info: Optional[CameraInfo] = None
         self.gripper_camera_info_subscriber = self.create_subscription(
             CameraInfo,
-            "/gripper_camera/camera_info",
+            "/gripper_camera/depth/camera_info",
             self.gripper_camera_info_cb,
             QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT),
         )
@@ -388,7 +394,7 @@ class MoveGripperToPointNode(Node):
             self.get_logger().info(f"##### Updated Goal Point: [{feedback.new_scaled_u}, {feedback.new_scaled_v}]")
             feedback.elapsed_time = (self.get_clock().now() - start_time).to_msg()
             goal_handle.publish_feedback(feedback)
-            self.save_cnn_images(save_gripper=False)
+            self.save_cnn_images(save_gripper=True)
 
         # Execute the states
         motion_executors: List[Generator[MotionGeneratorRetval, None, None]] = []
@@ -477,7 +483,7 @@ class MoveGripperToPointNode(Node):
             center_depth = depth_image[depth_image.shape[0]//2, depth_image.shape[1]//2]
             center_depth = center_depth / 1000.0 # Convert from mm to m
             center_height = self.cam_height + center_depth* np.tan(tilt_theta)
-            self.get_logger().info(f"Height of center pixel: {center_height} m")
+            self.get_logger().info(f"Center Depth: {center_depth} m, Height of center pixel: {center_height} m")
 
             return center_height
 
@@ -544,7 +550,7 @@ class MoveGripperToPointNode(Node):
         # Failed to execute MoveGripperToPoint
         return action_error_callback("Failed to execute MoveGripperToPoint")
 
-    def save_cnn_images(self, save_gripper: bool = False, save_ggcnn: bool =False):
+    def save_cnn_images(self, save_gripper: bool = False, grip_pred: bool = False):
         # D435 30 cm 이상부터 측정 가능. 최대 3 m
         with self.latest_realsense_rgb_lock:
             rgb_msg = self.latest_realsense_rgb
@@ -568,10 +574,11 @@ class MoveGripperToPointNode(Node):
             
         utils.save_image(depth_image, "head_depth")
         utils.save_image(rgb_image, "head_rgb")
+        
         pred_depth = get_pred_depth(rgb_image)
-        utils.save_image(pred_depth, "head_pred")
-
-        if save_ggcnn:
+        utils.save_image(pred_depth, "pred_depth")
+        
+        if grip_pred:
             depth_nan_mask = depth_image == 0
             depth_image = (depth_image/255.0).astype(np.float32)
             q_out, ang_out, width_out, depth_out = predict(

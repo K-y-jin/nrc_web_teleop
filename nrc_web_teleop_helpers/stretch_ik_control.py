@@ -181,13 +181,13 @@ class StretchIKControl:
             callback_group=MutuallyExclusiveCallbackGroup(),
         )
 
-        # Create a service client to switch to position mode
-        position_mode = ControlMode.POSITION
-        self.switch_to_position_client = self.node.create_client(
-            Trigger,
-            position_mode.get_service_name(),
-            callback_group=MutuallyExclusiveCallbackGroup(),
-        )
+        # Create a service client to switch to position mode (only base control mode change)
+        # position_mode = ControlMode.POSITION
+        # self.switch_to_position_client = self.node.create_client(
+        #     Trigger,
+        #     position_mode.get_service_name(),
+        #     callback_group=MutuallyExclusiveCallbackGroup(),
+        # )
 
         # Create a publisher and action client to command robot motion
         self.base_vel_pub = self.node.create_publisher(
@@ -266,9 +266,10 @@ class StretchIKControl:
             if joint_name in joint_map:
                 module, vel_key = joint_map[joint_name]
                 try:
-                    max_abs_vel = robot_params[module]["motion"][speed_profile_str][
-                        vel_key
-                    ]
+                    # max_abs_vel = robot_params[module]["motion"][speed_profile_str][
+                    #     vel_key
+                    # ]
+                    max_abs_vel = 0.1
                     min_abs_vel = robot_params[module]["motion"][
                         speed_profile_slow_str
                     ][vel_key]
@@ -284,7 +285,7 @@ class StretchIKControl:
                 min_abs_vel = 0.05  # rad/s
             elif joint_name == Joint.BASE_TRANSLATION:
                 max_abs_vel = 0.5   # m/s
-                min_abs_vel = 0.3  # m/s
+                min_abs_vel = 0.1  # m/s
             else:
                 self.node.get_logger().debug(
                     f"Will not get limits for joint name: {joint_name}"
@@ -367,6 +368,7 @@ class StretchIKControl:
         check_cancel: Callable[[], bool] = lambda: False,
         threshold_factor: float = 50.0,
         num_allowable_failures: int = 2,
+        success_callback: Optional[Callable[[npt.NDArray[float]], None]] = None,
     ) -> Generator[MotionGeneratorRetval, None, None]:
         """
         Move the arm joints to a specific position. This function is closed-loop, and
@@ -401,18 +403,12 @@ class StretchIKControl:
         start_time = self.node.get_clock().now()
         timeout = Duration(seconds=timeout_secs)
 
-        if Joint.WRIST_YAW in joint_positions or Joint.COMBINED_ARM in joint_positions or Joint.ARM_LIFT in joint_positions:
-            # Set position mode
-            if not self.set_position_mode(timeout = Duration(seconds=3.0)):
-                yield MotionGeneratorRetval.FAILURE
-                return
-
         # Limit the joint positions
         _, joint_positions = self.check_joint_limits(joint_positions)
         self.node.get_logger().debug(f"Target Joint Positions: {joint_positions}")
         
         # The duration of each trajectory command
-        duration = 1.0  # seconds
+        duration = 2.0  # seconds
 
         # Command motion until the termination criteria is reached
         send_goal_future = None
@@ -460,6 +456,8 @@ class StretchIKControl:
             # so keeps waiting until timeout.
             if len(joint_positions_cmd) == 0:
                 # cleanup()
+                if success_callback is not None:
+                    success_callback()
                 yield MotionGeneratorRetval.SUCCESS
                 return
             # Command the robot to move to the joint positions
@@ -514,8 +512,9 @@ class StretchIKControl:
 
             yield MotionGeneratorRetval.CONTINUE
 
-        # cleanup()
-        yield MotionGeneratorRetval.FAILURE if check_cancel() else MotionGeneratorRetval.SUCCESS
+        # if check_cancel()
+        cleanup()
+        yield MotionGeneratorRetval.FAILURE
         return
 
     def get_head_joint_states(self) -> Dict[Joint, float]:
@@ -984,49 +983,49 @@ class StretchIKControl:
                 return False
         return True
 
-    def set_position_mode(self, timeout: Duration, rate_hz: float = 10.0) -> bool:
-        """
-        Set the control mode to position control.
+    # def set_position_mode(self, timeout: Duration, rate_hz: float = 10.0) -> bool:
+    #     """
+    #     Set the control mode to position control.
 
-        Parameters
-        ----------
-        timeout: The timeout.
-        rate_hz: The rate in Hz at which to control the robot.
+    #     Parameters
+    #     ----------
+    #     timeout: The timeout.
+    #     rate_hz: The rate in Hz at which to control the robot.
 
-        Returns
-        -------
-        bool: True if the control mode was successfully set.
-        """
-        start_time = self.node.get_clock().now()
-        # Invoke the service
-        self.node.get_logger().debug("Switching to position control mode...")
-        ready = self.switch_to_position_client.wait_for_service(
-            timeout_sec=timeout.nanoseconds / 1.0e9
-        )
-        if not ready:
-            self.node.get_logger().error(
-                f"Service {self.switch_to_position_client.srv_name} not available."
-            )
-            return False
-        future = self.switch_to_position_client.call_async(Trigger.Request())
-        rate = self.node.create_rate(rate_hz)
-        while rclpy.ok() and not future.done():
-            # Check if we've reached timeout
-            if (
-                remaining_time(
-                    self.node.get_clock().now(), start_time, timeout, return_secs=True
-                )
-                <= 0.0
-            ):
-                self.node.get_logger().error("Failed to switch to position control mode.")
-                return False
-            rate.sleep()
-        if future.done():
-            result = future.result()
-            if not result.success:
-                self.node.get_logger().error("Failed to switch to position control mode.")
-                return False
-        return True
+    #     Returns
+    #     -------
+    #     bool: True if the control mode was successfully set.
+    #     """
+    #     start_time = self.node.get_clock().now()
+    #     # Invoke the service
+    #     self.node.get_logger().debug("Switching to position control mode...")
+    #     ready = self.switch_to_position_client.wait_for_service(
+    #         timeout_sec=timeout.nanoseconds / 1.0e9
+    #     )
+    #     if not ready:
+    #         self.node.get_logger().error(
+    #             f"Service {self.switch_to_position_client.srv_name} not available."
+    #         )
+    #         return False
+    #     future = self.switch_to_position_client.call_async(Trigger.Request())
+    #     rate = self.node.create_rate(rate_hz)
+    #     while rclpy.ok() and not future.done():
+    #         # Check if we've reached timeout
+    #         if (
+    #             remaining_time(
+    #                 self.node.get_clock().now(), start_time, timeout, return_secs=True
+    #             )
+    #             <= 0.0
+    #         ):
+    #             self.node.get_logger().error("Failed to switch to position control mode.")
+    #             return False
+    #         rate.sleep()
+    #     if future.done():
+    #         result = future.result()
+    #         if not result.success:
+    #             self.node.get_logger().error("Failed to switch to position control mode.")
+    #             return False
+    #     return True
 
     def __transform_pose(
         self,
