@@ -847,7 +847,7 @@ class StretchIKControl:
         success_callback: Optional[Callable[[npt.NDArray[float]], None]] = None,
     ) -> Generator[MotionGeneratorRetval, None, None]:
         """
-
+        TODO: position mode로 구현해도 되는데 생각을 못했다.
         Parameters
         ----------
 

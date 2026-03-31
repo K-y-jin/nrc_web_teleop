@@ -119,8 +119,8 @@ class MoveToActionState(Enum):
 
     def get_state_for_move_gripper_to_point() -> List[List[MoveToActionState]]:
         states = []
-        states.append([MoveToActionState.STOW_ARM_LENGTH_FULL])
-        states.append([MoveToActionState.STOW_WRIST])
+        # states.append([MoveToActionState.STOW_ARM_LENGTH_FULL])
+        # states.append([MoveToActionState.STOW_WRIST])
         # states.append([MoveToActionState.STOW_ARM_LIFT])
         states.append([MoveToActionState.HEAD_TILT])
         states.append([MoveToActionState.ROTATE_BASE_SIMPLE, MoveToActionState.HEAD_PAN])
@@ -215,8 +215,9 @@ class MoveToActionState(Enum):
                  joints_for_position_control[Joint.ARM_L0] = 0.0
             joints_for_position_control[Joint.ARM_L0] = ik_solution[Joint.ARM_L0]
         elif self == MoveToActionState.GRASP:
-            success_callback_temp = success_callback[0] # 임시 촬영용
-            joints_for_position_control.update(get_gripper_configuration(closed=False))
+            success_callback[0]() # 임시 촬영용
+            # Simulation에서 gripper position control이 잘 안 됨. 그리퍼만 명령 넣어도 안 됨.
+            # joints_for_position_control.update(get_gripper_configuration(closed=False))
         elif self == MoveToActionState.HEAD_TILT:
             joints_for_position_control[Joint.HEAD_TILT] = ik_solution[Joint.HEAD_TILT] # 33deg down
             velocity_overrides[Joint.HEAD_TILT] = 0.5

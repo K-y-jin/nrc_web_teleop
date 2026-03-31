@@ -44,19 +44,22 @@ def get_rgb_image_from_msg(
 def save_image(
         image: Union[npt.NDArray[np.uint8], npt.NDArray[np.uint16]],
         filename_prefix: str,
-        output_dir: str = 'output',
+        sub_dir: str = "head",
+        out_dir: str = "output"
     ):
 
-    output_dir = os.path.join(os.path.dirname(__file__), output_dir)
+    output_dir = os.path.join(os.getcwd(), out_dir)
+    output_dir = os.path.join(output_dir, sub_dir)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    filename = f'1_{filename_prefix}.png'
+    filename = f'{filename_prefix}_1.png'
     i = 1
     output_path = os.path.join(output_dir, filename)
     while os.path.exists(output_path):
-        filename = f'{i}_{filename_prefix}.png'
+        filename = f'{filename_prefix}_{i}.png'
         output_path = os.path.join(output_dir, filename)
         i += 1
 
     cv2.imwrite(output_path, image)
+    return output_dir
