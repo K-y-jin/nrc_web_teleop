@@ -80,6 +80,8 @@ export type ComponentDefinition = {
 export type ButtonPadDefinition = ComponentDefinition & {
     /** Indicates the shape and functions on the button pad*/
     id: ButtonPadId | ButtonPadIdMobile;
+    /** Whether to display position sliders alongside the buttons */
+    displaySliders?: boolean;
 };
 
 export type ParentComponentDefinition = ComponentDefinition & {

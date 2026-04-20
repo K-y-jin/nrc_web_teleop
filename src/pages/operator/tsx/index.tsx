@@ -288,7 +288,10 @@ function configureRemoteRobot() {
         buttonFunctionProvider.updateJointStates
     );
     remoteRobot.sensors.setJointStateFunctionProviderCallback(
-        underVideoFunctionProvider.jointStateCallback
+        (robotPose: RobotPose) => {
+            underVideoFunctionProvider.jointStateCallback(robotPose);
+            buttonFunctionProvider.updateRobotPose(robotPose);
+        }
     );
     remoteRobot.sensors.setBatteryFunctionProviderCallback(
         batteryVoltageFunctionProvider.updateVoltage

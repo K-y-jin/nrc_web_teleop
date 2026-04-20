@@ -326,10 +326,36 @@ const SidebarOptions = (props: OptionsProps) => {
                     break;
             }
             break;
+        case ComponentType.ButtonPad:
+            contents = <ButtonPadOptions {...props} />;
+            break;
         case ComponentType.SingleTab:
             contents = <TabOptions {...props} />;
     }
     return <div id="sidebar-options">{contents}</div>;
+};
+
+/** Options for a button pad layout component. */
+const ButtonPadOptions = (props: OptionsProps) => {
+    const definition = props.selectedDefinition as ButtonPadDefinition;
+    const hasSliders =
+        definition.id === ButtonPadId.Arm ||
+        definition.id === ButtonPadId.DexWrist;
+    if (!hasSliders) return null;
+
+    const slidersOn = definition.displaySliders !== false;
+    return (
+        <React.Fragment>
+            <OnOffToggleButton
+                on={slidersOn}
+                onClick={() => {
+                    definition.displaySliders = !slidersOn;
+                    props.updateLayout();
+                }}
+                label="Display position sliders"
+            />
+        </React.Fragment>
+    );
 };
 
 /** Options for the overhead camera video stream layout component. */

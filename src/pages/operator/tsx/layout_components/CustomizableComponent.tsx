@@ -10,6 +10,7 @@ import { ButtonPad } from "./ButtonPad";
 import { CameraView } from "./CameraView";
 import { PredictiveDisplay } from "./PredictiveDisplay";
 import { ButtonStateMap } from "../function_providers/ButtonFunctionProvider";
+import { RobotPose } from "shared/util";
 import { ButtonGrid } from "./ButtonGrid";
 import { VirtualJoystick } from "./VirtualJoystick";
 import { Map } from "./Map";
@@ -37,6 +38,8 @@ export type SharedState = {
     stretchTool: StretchTool;
     /** Whether or not robot has been homed */
     robotNotHomed: boolean;
+    /** Current robot joint positions */
+    robotPose?: RobotPose;
 };
 
 /** Properties for any of the customizable components: tabs, video streams, or

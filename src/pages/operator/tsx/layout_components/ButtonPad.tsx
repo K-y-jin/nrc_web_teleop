@@ -23,6 +23,7 @@ import {
     ButtonState,
 } from "../function_providers/ButtonFunctionProvider";
 import { isMobile } from "react-device-detect";
+import { LiftSlider, ExtensionSlider } from "./ArmSlider";
 import "operator/css/ButtonPad.css";
 
 /** Properties for {@link ButtonPad} */
@@ -57,6 +58,7 @@ export const ButtonPad = (props: ButtonPadProps) => {
     const definition = props.definition as ButtonPadDefinition;
     const id: ButtonPadId = definition.id;
     if (!id) throw Error("Undefined button pad ID at path " + props.path);
+
     const [shape, functions] = getShapeAndFunctionsFromId(definition.id);
     const [paths, iconPositions] = getPathsFromShape(shape, props.aspectRatio);
 
@@ -99,9 +101,73 @@ export const ButtonPad = (props: ButtonPadProps) => {
             }
             : {};
 
+    const sliderDisabled = props.sharedState.customizing || props.sharedState.robotNotHomed;
+    const rPose = props.sharedState.robotPose;
+    const showSliders = definition.displaySliders !== false;
+
+    const svgElement = (
+        <svg
+            ref={svgRef}
+            viewBox={`0 0 ${SVG_RESOLUTION} ${props.aspectRatio
+                ? SVG_RESOLUTION / props.aspectRatio
+                : SVG_RESOLUTION
+                }`}
+            preserveAspectRatio="none"
+            className={className("button-pads", {
+                customizing,
+                selected,
+                overlay,
+            })}
+            {...selectProp}
+        >
+            {paths.map(mapPaths)}
+        </svg>
+    );
+
+    if (id === ButtonPadId.Arm) {
+        if (!showSliders) {
+            return <div className="button-pad">{svgElement}</div>;
+        }
+        return (
+            <div className="button-pad-with-slider">
+                <LiftSlider
+                    jointName="joint_lift"
+                    label="H"
+                    robotPose={rPose}
+                    disabled={sliderDisabled}
+                />
+                <div className="button-pad-right-col">
+                    {svgElement}
+                    <ExtensionSlider
+                        jointName="wrist_extension"
+                        label="L"
+                        robotPose={rPose}
+                        disabled={sliderDisabled}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    if (id === ButtonPadId.DexWrist) {
+        if (!showSliders) {
+            return <div className="button-pad">{svgElement}</div>;
+        }
+        return (
+            <div className="button-pad-with-wrist-sliders">
+                <LiftSlider jointName="joint_wrist_pitch" label="Pitch" robotPose={rPose} disabled={sliderDisabled} unit="deg" centerZero />
+                <div className="wrist-center-col">
+                    <ExtensionSlider jointName="joint_wrist_roll" label="Roll" robotPose={rPose} disabled={sliderDisabled} unit="deg" centerZero />
+                    {svgElement}
+                    <ExtensionSlider jointName="joint_wrist_yaw" label="Yaw" robotPose={rPose} disabled={sliderDisabled} unit="deg" centerZero />
+                </div>
+                <LiftSlider jointName="joint_gripper_finger_left" label="Grip" robotPose={rPose} disabled={sliderDisabled} unit="norm" />
+            </div>
+        );
+    }
+
     return (
         <div className="button-pad">
-            {/* {!overlay && !isMobile? <h4 className="title">{id}</h4> : <></>} */}
             <svg
                 ref={svgRef}
                 viewBox={`0 0 ${SVG_RESOLUTION} ${props.aspectRatio

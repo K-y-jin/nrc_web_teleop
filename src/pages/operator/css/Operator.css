@@ -135,6 +135,8 @@
     flex: 1 1 0;
     grid-column: 1/1;
     grid-row: 3;
+    min-height: 0;
+    overflow: auto;
 }
 
 /** https://stackoverflow.com/a/40989121 **/

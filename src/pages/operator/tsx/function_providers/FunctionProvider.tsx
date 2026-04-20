@@ -1,6 +1,6 @@
 import { RemoteRobot } from "shared/remoterobot";
 import { VelocityCommand } from "shared/commands";
-import { ValidJoints } from "shared/util";
+import { ValidJoints, RobotPose } from "shared/util";
 import { ActionMode } from "../utils/component_definitions";
 
 /**
@@ -80,6 +80,11 @@ export abstract class FunctionProvider {
     // NOTE: When we undo this temp fix (of not stopping the
     // trajectory client) we also need to undo it in robot.jsx
     // `stopExecution()`.
+    public static moveToJointPosition(jointName: ValidJoints, position: number) {
+        const pose: RobotPose = { [jointName]: position };
+        FunctionProvider.remoteRobot?.setRobotPose(pose);
+    }
+
     public stopCurrentAction(send_stop_command: boolean = false) {
         if (send_stop_command) FunctionProvider.remoteRobot?.stopTrajectory();
         if (this.activeVelocityAction) {

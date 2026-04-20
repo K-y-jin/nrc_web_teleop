@@ -79,6 +79,9 @@ export const Operator = (props: {
         showHomeTheRobotGlobalControl
     );
 
+    const [robotPose, setRobotPose] = React.useState<RobotPose>({});
+    buttonFunctionProvider.setRobotPoseCallback(setRobotPose);
+
     const layout = React.useRef<LayoutDefinition>(props.layout);
 
     // Just used as a flag to force the operator to rerender when the button state map
@@ -341,6 +344,7 @@ export const Operator = (props: {
         hasBetaTeleopKit: hasBetaTeleopKit,
         stretchTool: stretchTool,
         robotNotHomed: robotNotHomed,
+        robotPose: robotPose,
     };
 
     /** Properties for the global options area of the sidebar */

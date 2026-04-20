@@ -3,6 +3,7 @@ import {
     JOINT_INCREMENTS,
     ValidJoints,
     ValidJointStateDict,
+    RobotPose,
 } from "shared/util";
 import { ActionMode } from "../utils/component_definitions";
 import { FunctionProvider } from "./FunctionProvider";
@@ -90,10 +91,14 @@ export class ButtonFunctionProvider extends FunctionProvider {
     private operatorCallback?: (buttonStateMap: ButtonStateMap) => void =
         undefined;
 
+    /** Callback to forward robot pose updates to the operator */
+    private robotPoseCallback?: (robotPose: RobotPose) => void = undefined;
+
     constructor() {
         super();
         this.provideFunctions = this.provideFunctions.bind(this);
         this.updateJointStates = this.updateJointStates.bind(this);
+        this.updateRobotPose = this.updateRobotPose.bind(this);
         this.setButtonActiveState = this.setButtonActiveState.bind(this);
         this.setButtonInactiveState = this.setButtonInactiveState.bind(this);
     }
@@ -189,6 +194,20 @@ export class ButtonFunctionProvider extends FunctionProvider {
         callback: (buttonStateMap: ButtonStateMap) => void,
     ) {
         this.operatorCallback = callback;
+    }
+
+    /**
+     * Sets the callback to forward robot pose updates to the operator.
+     */
+    public setRobotPoseCallback(callback: (robotPose: RobotPose) => void) {
+        this.robotPoseCallback = callback;
+    }
+
+    /**
+     * Called when a new robot pose is received. Forwards it to the operator.
+     */
+    public updateRobotPose(robotPose: RobotPose) {
+        if (this.robotPoseCallback) this.robotPoseCallback(robotPose);
     }
 
     /**
