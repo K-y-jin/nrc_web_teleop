@@ -23,14 +23,13 @@ def get_depth_image_from_msg(
     PointCloud2 메시지 타입인 경우, 측정 불가능(값이 0)인 점은 마스크 아웃되어 이미지 크기가 작음.
     CompressedImage는 encoding=16UC1. 보통 mm
     """
+    # D405 range:  0 (invalid), 70-500
+    # D435 range:  0 (invalid), 300-3000
     depth_image = ros_msg_to_cv2_image(depth_msg, cvBridge)
-    measurement_min = 0.0 #measurement_min*1000.0
+    measurement_min = 0.0
     measurement_max = measurement_max*1000.0
-    # measurement_max = np.max(depth_image)
-    # measurement_min = np.min(depth_image)
-    depth_image = (depth_image - measurement_min)/(measurement_max - measurement_min)*65535.0
-    # depth_image = np.clip(depth_image, 0, 255)
-    # depth_image = (depth_image).astype(np.uint8)
+    
+    # depth_image = (depth_image - measurement_min)/(measurement_max - measurement_min)*65535.0
     depth_image = np.clip(depth_image, 0, 65535)
     depth_image = (depth_image).astype(np.uint16)
     return depth_image

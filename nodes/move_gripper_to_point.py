@@ -550,6 +550,11 @@ class MoveGripperToPointNode(Node):
         # Failed to execute MoveGripperToPoint
         return action_error_callback("Failed to execute MoveGripperToPoint")
 
+    def get_optimal_grasp(self):
+        # Navigation Cam image
+        # GR conv
+        return
+
     def save_images(self, save_gripper: bool = False, grip_pred: bool = False):
         # D435 30 cm 이상부터 측정 가능. 최대 3 m
         with self.latest_realsense_rgb_lock:

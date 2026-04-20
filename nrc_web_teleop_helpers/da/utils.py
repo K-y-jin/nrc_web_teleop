@@ -42,9 +42,21 @@ def get_model(encoder='vits'):
     
 model = get_model()
 
-def get_pred_depth(rgb_image: npt.NDArray):       
+def get_pred_depth(rgb_image: npt.NDArray, ref_rcz=None):
     depth = model.infer_image(rgb_image, input_size=256)
     depth = 1./(depth+1)
-    depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
-    depth = depth.astype(np.uint8)
+    print("pred depth shape: ", depth.shape)
+
+    # depth = (depth - depth.min()) / (depth.max() - depth.min()) * 65535.0
+    if ref_rcz is not None:
+        r, c, z = ref_rcz
+        if depth[r, c] > 0:
+            print(z, depth[r, c])
+            scale_factor = z / depth[r, c]
+        else:
+            scale_factor = 0.0
+        depth = scale_factor * depth
+        print(z, depth[r, c])
+        depth = np.clip(depth, 0, 65535)
+    depth = depth.astype(np.uint16)
     return depth

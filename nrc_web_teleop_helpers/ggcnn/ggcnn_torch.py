@@ -25,6 +25,7 @@ def process_depth_image(depth, crop_size=None, out_size=300, return_mask=False, 
         if isinstance(crop_size, int) and crop_size < imh and crop_size < imw and crop_size:
             depth_crop = depth[(imh - crop_size) // 2 - crop_y_offset:(imh - crop_size) // 2 + crop_size - crop_y_offset,
                            (imw - crop_size) // 2:(imw - crop_size) // 2 + crop_size]
+            print(f"Crop: {depth.shape} -> {depth_crop.shape}")
         else:
             depth_crop = depth
             
@@ -53,12 +54,15 @@ def process_depth_image(depth, crop_size=None, out_size=300, return_mask=False, 
 
     with TimeIt('5'):
         # Resize
-        depth_crop = cv2.resize(depth_crop, (out_size, out_size), cv2.INTER_AREA)
+        if isinstance(out_size, int):
+            print(f"Resize: {depth_crop.shape} -> ({out_size}, {out_size})")
+            depth_crop = cv2.resize(depth_crop, (out_size, out_size), cv2.INTER_AREA)
 
     if return_mask:
         with TimeIt('6'):
             depth_nan_mask = depth_nan_mask[1:-1, 1:-1]
-            depth_nan_mask = cv2.resize(depth_nan_mask, (out_size, out_size), cv2.INTER_NEAREST)
+            if isinstance(out_size, int):
+                depth_nan_mask = cv2.resize(depth_nan_mask, (out_size, out_size), cv2.INTER_NEAREST)
         return depth_crop, depth_nan_mask
     else:
         return depth_crop
@@ -67,15 +71,26 @@ def process_depth_image(depth, crop_size=None, out_size=300, return_mask=False, 
 def predict(depth, process_depth=True, crop_size=300, out_size=300, depth_nan_mask=None, crop_y_offset=0, filters=(2.0, 1.0, 1.0)):
     if process_depth:
         depth, depth_nan_mask = process_depth_image(depth, crop_size, out_size=out_size, return_mask=True, crop_y_offset=crop_y_offset)
-
+    
     # Inference
     # depth = np.clip((depth - depth.mean()), -1, 1)
-    depthT = torch.from_numpy(depth.reshape(1, 1, out_size, out_size).astype(np.float32)).to(device)
+    imh, imw = depth.shape
+
+    if isinstance(out_size, int):
+        depth = depth.reshape(1, 1, out_size, out_size)
+    else:
+        depth = depth.reshape(1, 1, imh, imw)
+
+    depthT = torch.from_numpy(depth.astype(np.float32)).to(device)
+
     with torch.no_grad():
         pred_out = model(depthT)
 
     points_out = pred_out[0].cpu().numpy().squeeze()
-    points_out[depth_nan_mask] = 0
+    print(f"Resize: {depth.shape} -> {depthT.shape}-> {points_out.shape})")
+
+    if depth_nan_mask is not None:
+        points_out[depth_nan_mask] = 0
 
     # Calculate the angle map.
     cos_out = pred_out[1].cpu().numpy().squeeze()

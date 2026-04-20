@@ -53,6 +53,7 @@ class MoveToActionState(Enum):
     GRASP = 10
     MOVE_BASE = 11
     TERMINAL = 12
+    CHECK_AND_LIFT_ARM = 13
     @staticmethod
     def get_state_for_pregrasp_action(
         horizontal_grasp: bool,
@@ -119,14 +120,14 @@ class MoveToActionState(Enum):
 
     def get_state_for_move_gripper_to_point() -> List[List[MoveToActionState]]:
         states = []
-        # states.append([MoveToActionState.STOW_ARM_LENGTH_FULL])
-        # states.append([MoveToActionState.STOW_WRIST])
-        # states.append([MoveToActionState.STOW_ARM_LIFT])
+        states.append([MoveToActionState.STOW_ARM_LENGTH_FULL])
+        states.append([MoveToActionState.STOW_WRIST])
+        states.append([MoveToActionState.STOW_ARM_LIFT])
         states.append([MoveToActionState.HEAD_TILT])
         states.append([MoveToActionState.ROTATE_BASE_SIMPLE, MoveToActionState.HEAD_PAN])
-        states.append([MoveToActionState.LIFT_ARM])
-        states.append([MoveToActionState.MOVE_WRIST])
-        states.append([MoveToActionState.GRASP])
+        states.append([MoveToActionState.CHECK_AND_LIFT_ARM])
+        # states.append([MoveToActionState.MOVE_WRIST])
+        # states.append([MoveToActionState.GRASP])
         states.append([MoveToActionState.TERMINAL])
         return states
 
@@ -209,6 +210,8 @@ class MoveToActionState(Enum):
             joints_for_position_control.update(
                 get_pregrasp_wrist_configuration(horizontal_grasp)
             )
+        elif self == MoveToActionState.CHECK_AND_LIFT_ARM:
+            success_callback[0]() # Head Cam Image Processing
         elif self == MoveToActionState.LENGTHEN_ARM:
             if ik_solution[Joint.ARM_L0] is None:
                 #  ik_solution[Joint.ARM_L0] = err_callback[2]() - 0.3 # gripper length 고려
