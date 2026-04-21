@@ -1,0 +1,7 @@
+# Request: 클릭한 위치의 정규화된 좌표 (0.0 ~ 1.0)
+float64 scaled_u
+float64 scaled_v
+---
+# Response: 해당 위치의 predicted depth 값 (mm)
+float64 distance
+bool success
