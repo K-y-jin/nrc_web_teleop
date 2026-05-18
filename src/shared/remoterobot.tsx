@@ -22,6 +22,7 @@ import {
     StopTextToSpeech,
     HomeTheRobotCommand,
     ShowTabletCommand,
+    GetDistanceCommand,
 } from "shared/commands";
 import {
     ValidJointStateDict,
@@ -196,6 +197,7 @@ export class RemoteRobot extends React.Component<{}, any> {
             | "setFollowGripper"
             | "setRealsenseDepthSensing"
             | "setGripperDepthSensing"
+            | "setNavigationDepthSensing"
             | "setRealsenseBodyPoseEstimate"
             | "setExpandedGripper"
             | "setRunStop",
@@ -263,6 +265,15 @@ export class RemoteRobot extends React.Component<{}, any> {
     stopMoveGripperToPoint() {
         let cmd: StopMoveGripperToPointCommand = {
             type: "stopMoveGripperToPoint",
+        };
+        this.robotChannel(cmd);
+    }
+
+    getDistance(scaled_u: number, scaled_v: number) {
+        let cmd: GetDistanceCommand = {
+            type: "getDistance",
+            scaled_u: scaled_u,
+            scaled_v: scaled_v,
         };
         this.robotChannel(cmd);
     }

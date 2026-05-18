@@ -27,6 +27,7 @@ export enum UnderVideoButton {
     FollowGripper = "Follow Gripper",
     RealsenseDepthSensing = "Realsense Depth Sensing",
     GripperDepthSensing = "Gripper Depth Sensing",
+    NavigationDepthSensing = "Navigation Depth Sensing",
     ExpandedGripperView = "Expanded Gripper View",
     ToggleArucoMarkers = "Toggle Aruco Markers",
     CenterWrist = "Center Wrist",
@@ -137,6 +138,13 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
     private selectedLocationScaledXYCallback?: (
         scaledXY: [number, number]
     ) => void = undefined;
+    /**
+     * Callback function to update the distance result in the operator interface.
+     */
+    private distanceResultCallback?: (result: {
+        distance: number;
+        success: boolean;
+    }) => void = undefined;
     /**
      * Store the timestamp at which the last moveToPregrasp state was received
      */
@@ -277,6 +285,14 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
                     onCheck: (toggle: boolean) =>
                         FunctionProvider.remoteRobot?.setToggle(
                             "setGripperDepthSensing",
+                            toggle
+                        ),
+                };
+            case UnderVideoButton.NavigationDepthSensing:
+                return {
+                    onCheck: (toggle: boolean) =>
+                        FunctionProvider.remoteRobot?.setToggle(
+                            "setNavigationDepthSensing",
                             toggle
                         ),
                 };
@@ -597,5 +613,27 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
         callback: (scaledXY: [number, number]) => void
     ) {
         this.selectedLocationScaledXYCallback = callback;
+    }
+
+    public handleDistanceResult(result: {
+        distance: number;
+        success: boolean;
+    }) {
+        if (this.distanceResultCallback) {
+            this.distanceResultCallback(result);
+        }
+    }
+
+    public setDistanceResultCallback(
+        callback: (result: {
+            distance: number;
+            success: boolean;
+        }) => void
+    ) {
+        this.distanceResultCallback = callback;
+    }
+
+    public requestDistance(scaled_u: number, scaled_v: number) {
+        FunctionProvider.remoteRobot?.getDistance(scaled_u, scaled_v);
     }
 }

@@ -20,6 +20,27 @@
     text-overflow: ellipsis;
 }
 
+.arm-slider-limit {
+    font-size: small;
+    color: hsl(0, 0%, 45%);
+    font-family: monospace;
+    text-align: center;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.arm-slider-h-track-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.3rem;
+    width: 100%;
+}
+
+.arm-slider-h-track-row .arm-slider-track-h {
+    flex: 1 1 auto;
+}
+
 .disabled {
     opacity: 0.4;
     pointer-events: none;

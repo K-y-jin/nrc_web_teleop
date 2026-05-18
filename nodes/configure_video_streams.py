@@ -106,7 +106,8 @@ class ConfigureVideoStreams(Node):
         self.declare_parameter("stretch_tool", rclpy.Parameter.Type.STRING)
 
         # Subscribe to the TF camera feeds to project camera points into base frame.
-        if self.use_realsense:
+        # (realsense depth AR와 navigation depth AR 모두 TF가 필요함)
+        if self.use_realsense or self.use_overhead:
             self.tf_buffer = tf2_ros.Buffer(cache_time=Duration(seconds=12))
             self.tf2_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
@@ -322,6 +323,15 @@ class ConfigureVideoStreams(Node):
                 SetBool, "gripper_depth_ar", self.gripper_depth_ar_callback
             )
             self.gripper_depth_ar = False
+
+        # 오버헤드(navigation) 카메라에 로봇 팔 도달 영역 오버레이 토글
+        if self.use_overhead:
+            self.navigation_depth_ar_service = self.create_service(
+                SetBool, "navigation_depth_ar", self.navigation_depth_ar_callback
+            )
+            self.navigation_depth_ar = False
+            # 미리 생성된 base_link 기준 지면(z=0) 도달 영역 포인트 캐시
+            self._nav_reach_points_base = self._generate_reach_points_on_ground()
 
         self.roll_value = 0.0
 
@@ -573,6 +583,124 @@ class ConfigureVideoStreams(Node):
         self.gripper_depth_ar = req.data
         res.success = True
         return res
+
+    def navigation_depth_ar_callback(self, req, res):
+        self.get_logger().info(f"Navigation depth AR service: {req.data}")
+        self.navigation_depth_ar = req.data
+        res.success = True
+        return res
+
+    def _generate_reach_points_on_ground(
+        self,
+        r_min: float = 0.25,
+        r_max: float = 1.0,
+        r_step: float = 0.025,
+        theta_step_deg: float = 2.0,
+    ) -> npt.NDArray[np.float32]:
+        """base_link 기준 지면(z=0) 위의 도달 가능한 환형 영역 포인트를 생성."""
+        thetas = np.deg2rad(np.arange(0.0, 360.0, theta_step_deg))
+        radii = np.arange(r_min, r_max + r_step * 0.5, r_step)
+        T, R = np.meshgrid(thetas, radii)
+        X = (R * np.cos(T)).flatten()
+        Y = (R * np.sin(T)).flatten()
+        Z = np.zeros_like(X)
+        return np.stack([X, Y, Z], axis=1).astype(np.float32)
+
+    def overlay_navigation_depth_ar(
+        self,
+        img: npt.NDArray[np.uint8],
+    ) -> npt.NDArray[np.uint8]:
+        """
+        base_link 기준 XY 평면의 도달 가능 영역(환형, r=0.25~1.0m)을
+        navigation camera 이미지에 오버레이한다.
+
+        link_head_nav_cam은 URDF에서 z=forward, x=down, y=left 규약.
+        이상적 핀홀 카메라 모델 가정 (fx=W, fy=H, cx=W/2, cy=H/2).
+        """
+        # base_link → link_head_nav_cam TF
+        ok, transform = tf2_get_transform(
+            self.tf_buffer,
+            "link_head_nav_cam",
+            "base_link",
+            timeout=Duration(seconds=0.1),
+        )
+        if not ok:
+            self.get_logger().warn(
+                "Could not find the transform between link_head_nav_cam and base_link.",
+                throttle_duration_sec=5.0,
+            )
+            return img
+
+        # 포인트를 카메라 프레임으로 변환
+        t_kdl = self.transform_to_kdl(transform)
+        pts_base = self._nav_reach_points_base
+        pts_cam = np.empty_like(pts_base)
+        for i, p in enumerate(pts_base):
+            p_out = t_kdl * PyKDL.Vector(float(p[0]), float(p[1]), float(p[2]))
+            pts_cam[i, 0] = p_out[0]
+            pts_cam[i, 1] = p_out[1]
+            pts_cam[i, 2] = p_out[2]
+
+        # link_head_nav_cam → optical(x=right, y=down, z=forward) 변환
+        # URDF joint rpy=(0, pi/2, 0)에서 유도: link의 x=down, y=left, z=forward
+        # 단, 실제 영상에서 좌우가 반대로 보이므로 y 축 부호를 반전한다
+        # optical_x =  link_y  (left→right swap: 실측 보정)
+        # optical_y =  link_x  (down = down)
+        # optical_z =  link_z  (forward = forward)
+        Xo = pts_cam[:, 1]
+        Yo = pts_cam[:, 0]
+        Zo = pts_cam[:, 2]
+
+        # 카메라 전방(+Zo)에 있는 포인트만 유지
+        in_front = Zo > 0.01
+        Xo, Yo, Zo = Xo[in_front], Yo[in_front], Zo[in_front]
+        if Zo.size == 0:
+            self.get_logger().warn(
+                "No reach-zone points in front of navigation camera.",
+                throttle_duration_sec=5.0,
+            )
+            return img
+
+        # 이상적 핀홀 모델로 투영 (raw 이미지 좌표계)
+        H, W = img.shape[:2]
+        fx, fy = float(W), float(H)
+        cx, cy = W / 2.0, H / 2.0
+        u = (fx * Xo / Zo + cx).astype(np.int32)
+        v = (fy * Yo / Zo + cy).astype(np.int32)
+
+        # 이미지 범위 내 픽셀만 유지
+        valid = (u >= 0) & (u < W) & (v >= 0) & (v < H)
+        u = u[valid]
+        v = v[valid]
+        self.get_logger().info(
+            f"Nav depth AR: {u.size}/{Zo.size} points visible "
+            f"(img={W}x{H})",
+            throttle_duration_sec=2.0,
+        )
+        if u.size == 0:
+            return img
+
+        # 오버레이 마스크 생성 및 확장 (nav 카메라는 멀리 있어서 포인트 밀도가 낮으므로 크게 확장)
+        overlay_mask = np.zeros((H, W), dtype=np.uint8)
+        overlay_mask[v, u] = 255
+        overlay_mask = cv2.dilate(
+            overlay_mask,
+            np.ones((11, 11), np.uint8),
+            iterations=2,
+        )
+
+        overlay_img = np.tile(
+            self.REALSENSE_DEPTH_AR_COLOR, (H, W, 1)
+        )
+        overlaid_img = cv2.addWeighted(
+            img,
+            1 - self.REALSENSE_DEPTH_AR_ALPHA,
+            overlay_img,
+            self.REALSENSE_DEPTH_AR_ALPHA,
+            0,
+        )
+        img = np.where(overlay_mask[:, :, None], overlaid_img, img)
+        return img
 
     def expanded_gripper_callback(self, req, res):
         self.get_logger().info(f"Expanded gripper service: {req.data}")
@@ -1014,6 +1142,9 @@ class ConfigureVideoStreams(Node):
     def process_navigation_image(self, ros_image):
         image = ros_msg_to_cv2_image(ros_image, self.cv_bridge)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # 도달 영역 오버레이는 crop/rotate 전 raw 이미지에 적용
+        if getattr(self, "navigation_depth_ar", False):
+            image = self.overlay_navigation_depth_ar(image)
         self.overhead_camera_rgb_image = self.configure_images(
             image, self.overhead_params[self.overhead_camera_perspective]
         )

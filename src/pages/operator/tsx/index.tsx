@@ -247,6 +247,10 @@ function handleWebRTCMessage(message: WebRTCMessage | WebRTCMessage[]) {
         case "batteryVoltage":
             remoteRobot.sensors.setBatteryVoltage(message.message);
             break;
+        case "distanceResult":
+            console.log("distanceResult", message.message);
+            underVideoFunctionProvider.handleDistanceResult(message.message);
+            break;
         default:
             throw Error(`unhandled WebRTC message type ${message.type}`);
     }

@@ -60,6 +60,7 @@ export const robot = new Robot({
     isRunStoppedCallback: forwardIsRunStopped,
     hasBetaTeleopKitCallback: forwardHasBetaTeleopKit,
     stretchToolCallback: forwardStretchTool,
+    getDistanceResultCallback: forwardGetDistanceResult,
 });
 
 export let connection: WebRTCConnection;
@@ -278,6 +279,18 @@ function forwardOccupancyGrid(occupancyGrid: ROSOccupancyGrid) {
     // } as OccupancyGridMessage);
 }
 
+function forwardGetDistanceResult(response: {
+    distance: number;
+    success: boolean;
+}) {
+    if (!connection) throw "WebRTC connection undefined";
+
+    connection.sendData({
+        type: "distanceResult",
+        message: response,
+    });
+}
+
 function forwardAMCLPose(transform: ROSLIB.Transform) {
     if (!connection) throw "WebRTC connection undefined";
 
@@ -331,6 +344,9 @@ function handleMessage(message: WebRTCMessage) {
             break;
         case "setGripperDepthSensing":
             robot.setGripperDepthSensing(message.toggle);
+            break;
+        case "setNavigationDepthSensing":
+            robot.setNavigationDepthSensing(message.toggle);
             break;
         case "setExpandedGripper":
             robot.setExpandedGripper(message.toggle);
@@ -400,6 +416,9 @@ function handleMessage(message: WebRTCMessage) {
             break;
         case "homeTheRobot":
             robot.homeTheRobot();
+            break;
+        case "getDistance":
+            robot.getDistance(message.scaled_u, message.scaled_v);
             break;
     }
 }

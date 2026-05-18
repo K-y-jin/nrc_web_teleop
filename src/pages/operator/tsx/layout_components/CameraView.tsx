@@ -84,6 +84,10 @@ export const CameraView = (props: CustomizableComponentProps) => {
     // Whether the robot is currently moving to show the tablet to the user
     const [isShowingTablet, setIsShowingTablet] =
         React.useState<boolean>(false);
+    // 클릭 지점의 predicted depth 값 (mm)
+    const [predictedDistance, setPredictedDistance] = React.useState<
+        number | null
+    >(null);
     const definition = React.useMemo(
         () => props.definition as CameraViewDefinition,
         [props.definition]
@@ -94,6 +98,7 @@ export const CameraView = (props: CustomizableComponentProps) => {
             setIsMovingBaseToPoint(false);
         }
         setSelectLocationScaledXY(null);
+        setPredictedDistance(null);
     }
     underVideoFunctionProvider.setMoveBaseToPointOperatorCallbackSub(
         moveBaseToPointStateCallback
@@ -104,6 +109,7 @@ export const CameraView = (props: CustomizableComponentProps) => {
             setIsMovingGripperToPoint(false);
         }
         setSelectLocationScaledXY(null);
+        setPredictedDistance(null);
     }
     underVideoFunctionProvider.setMoveGripperToPointOperatorCallbakcSub(
         moveGripperToPointStateCallback
@@ -137,6 +143,16 @@ export const CameraView = (props: CustomizableComponentProps) => {
         if (definition.id === CameraViewId.overhead) {
             underVideoFunctionProvider.setSelectedLocationScaledXYCallback(
                 setSelectLocationScaledXY
+            );
+            // distance 결과 수신 콜백 설정
+            underVideoFunctionProvider.setDistanceResultCallback(
+                (result) => {
+                    if (result.success) {
+                        setPredictedDistance(result.distance);
+                    } else {
+                        setPredictedDistance(null);
+                    }
+                }
             );
         }
     }, [definition]);
@@ -227,27 +243,35 @@ export const CameraView = (props: CustomizableComponentProps) => {
             // ).onClick!(scaled_u, scaled_v);add
         }
         // [Move-base-to-point] If it is the Overhead, there is no overlay (e.g., button pad),
+        // 오버헤드 카메라 뷰에서 오버레이가 없는 경우
         else if (props.definition.id == CameraViewId.overhead && !overlay) {
-            // Move to point goal Cancel
+            // 베이스 이동 중일 때: 이동 취소
             if (isMovingBaseToPoint) {
                 underVideoFunctionProvider.provideFunctions(
                     UnderVideoButton.CancelMoveBaseToPoint
                 ).onClick!();
                 setIsMovingBaseToPoint(false);
                 setSelectLocationScaledXY(null);
+                setPredictedDistance(null);
             }
+            // 그리퍼 이동 중일 때: 이동 취소
             if (isMovingGripperToPoint) {
                 underVideoFunctionProvider.provideFunctions(
                     UnderVideoButton.CancelMoveGripperToPoint
                 ).onClick!();
                 setIsMovingGripperToPoint(false);
                 setSelectLocationScaledXY(null);
+                setPredictedDistance(null);
+            // 이동 중이 아닐 때: 클릭 좌표를 정규화하여 위치 선택 + depth prediction 요청
             } else {
                 let scaled_u = x / (right - left);
                 let scaled_v = y / (bottom - top);
                 setSelectLocationScaledXY([scaled_u, scaled_v]);
+                setPredictedDistance(null);
+                underVideoFunctionProvider.requestDistance(scaled_u, scaled_v);
                 console.log("scaled x", scaled_u, "scaled y", scaled_v);
             }
+        // 그 외 카메라 뷰: 위치 선택 초기화
         } else {
             setSelectLocationScaledXY(null);
         }
@@ -360,7 +384,7 @@ export const CameraView = (props: CustomizableComponentProps) => {
     const videoComponent = (
         <div
             className="video-area"
-            style={{ gridRow: 2, gridColumn: 1 }}
+            style={{ gridRow: 1, gridColumn: 1 }}
             ref={videoAreaRef}
         >
             {videoOverlay}
@@ -398,6 +422,27 @@ export const CameraView = (props: CustomizableComponentProps) => {
                         }}
                     />
                 </>
+            ) : undefined}
+            {selectLocationScaledXY && predictedDistance !== null ? (
+                <span
+                    style={{
+                        position: "absolute",
+                        left:
+                            (selectLocationScaledXY[0] * 100).toString() + "%",
+                        top:
+                            (selectLocationScaledXY[1] * 100 - 3).toString() +
+                            "%",
+                        transform: "translateX(-50%) translateY(-100%)",
+                        color: "lime",
+                        fontSize: "0.85em",
+                        fontWeight: "bold",
+                        textShadow: "0 0 3px black, 0 0 3px black",
+                        pointerEvents: "none",
+                        whiteSpace: "nowrap",
+                    }}
+                >
+                    {(predictedDistance / 1000).toFixed(2)} m
+                </span>
             ) : undefined}
         </div>
     );
@@ -1058,6 +1103,18 @@ const UnderAdjustableOverheadButtons = (props: {
                     setRerender(!rerender);
                 }}
                 label="Predictive Display"
+            />
+            <CheckToggleButton
+                checked={props.definition.navigationDepthSensing || false}
+                onClick={() => {
+                    props.definition.navigationDepthSensing =
+                        !props.definition.navigationDepthSensing;
+                    setRerender(!rerender);
+                    underVideoFunctionProvider.provideFunctions(
+                        UnderVideoButton.NavigationDepthSensing
+                    ).onCheck!(props.definition.navigationDepthSensing);
+                }}
+                label="Reach Zone"
             />
             {moveBaseToPointButtons}
             {moveGripperToPointButtons}

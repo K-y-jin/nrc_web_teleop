@@ -29,6 +29,7 @@ from sensor_msgs.msg import CameraInfo, CompressedImage, Image, PointCloud2
 
 # Local Imports
 from nrc_web_teleop.action import MoveGripperToPoint
+from nrc_web_teleop.srv import GetDistance
 from nrc_web_teleop_helpers.constants import (
     Joint,
     Frame,
@@ -181,6 +182,14 @@ class MoveGripperToPointNode(Node):
             self.execute_callback,
             goal_callback=self.goal_callback,
             cancel_callback=self.cancel_callback,
+            callback_group=ReentrantCallbackGroup(),
+        )
+
+        # Create the GetDistance service server
+        self.get_distance_service = self.create_service(
+            GetDistance,
+            "get_distance",
+            self.get_distance_callback,
             callback_group=ReentrantCallbackGroup(),
         )
 
@@ -680,6 +689,57 @@ class MoveGripperToPointNode(Node):
         )
 
         return x, y, z, depth_msg.header
+
+    def get_distance_callback(self, request, response):
+        """
+        GetDistance 서비스 콜백.
+        클릭한 좌표(scaled_u, scaled_v)의 predicted depth 값을 반환한다.
+        """
+        scaled_u = request.scaled_u
+        scaled_v = request.scaled_v
+        self.get_logger().info(
+            f"GetDistance request: scaled_u={scaled_u}, scaled_v={scaled_v}"
+        )
+
+        try:
+            # 오버헤드 카메라(navigation camera) 이미지로 depth prediction
+            with self.latest_navigation_camera_image_lock:
+                nav_image_msg = self.latest_navigation_camera_image
+            if nav_image_msg is None:
+                self.get_logger().error("No navigation camera image received yet")
+                response.success = False
+                return response
+
+            rgb_image = ros_msg_to_cv2_image(nav_image_msg, self.cv_bridge)
+
+            # realsense depth 이미지의 중앙 픽셀에서 depth 값을 참조 깊이로 사용
+            with self.latest_realsense_depth_lock:
+                depth_msg = self.latest_realsense_depth
+            if depth_msg is None:
+                self.get_logger().error("No realsense depth image received yet")
+                response.success = False
+                return response
+            depth_image = ros_msg_to_cv2_image(depth_msg, self.cv_bridge)
+            center_r = depth_image.shape[0] // 2
+            center_c = depth_image.shape[1] // 2
+            ref_depth = float(depth_image[center_r, center_c])
+
+            pred_depth = get_pred_depth(rgb_image, ref_rcz=(center_r, center_c, ref_depth))
+            utils.save_image(pred_depth, f'{ref_depth}', 'test')
+            H, W = pred_depth.shape[:2]
+            px = int(scaled_u * W)
+            py = int(scaled_v * H)
+            px = np.clip(px, 0, W - 1)
+            py = np.clip(py, 0, H - 1)
+
+            response.distance = float(pred_depth[py, px]) # mm
+            response.success = True
+
+        except Exception as e:
+            self.get_logger().error(f"GetDistance failed: {e}")
+            response.success = False
+
+        return response
 
 def main(args: Optional[List[str]] = None):
     rclpy.init(args=args)

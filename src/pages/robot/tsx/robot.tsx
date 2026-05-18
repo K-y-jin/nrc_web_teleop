@@ -57,6 +57,7 @@ export class Robot extends React.Component {
     private setCameraPerspectiveService?: ROSLIB.Service;
     private setRealsenseDepthSensingService?: ROSLIB.Service;
     private setGripperDepthSensingService?: ROSLIB.Service;
+    private setNavigationDepthSensingService?: ROSLIB.Service;
     private setExpandedGripperService?: ROSLIB.Service;
     private setRealsenseShowBodyPoseService?: ROSLIB.Service;
     private setComputeBodyPoseService?: ROSLIB.Service;
@@ -97,6 +98,11 @@ export class Robot extends React.Component {
     private stretchToolParam: ROSLIB.Param;
     private textToSpeechTopic?: ROSLIB.Topic;
     private homeTheRobotService?: ROSLIB.Service;
+    private getDistanceService?: ROSLIB.Service;
+    private getDistanceResultCallback: (response: {
+        distance: number;
+        success: boolean;
+    }) => void;
 
     constructor(props: {
         jointStateCallback: (
@@ -123,6 +129,10 @@ export class Robot extends React.Component {
         isRunStoppedCallback: (isRunStopped: boolean) => void;
         hasBetaTeleopKitCallback: (value: boolean) => void;
         stretchToolCallback: (value: string) => void;
+        getDistanceResultCallback: (response: {
+            distance: number;
+            success: boolean;
+        }) => void;
     }) {
         super(props);
         this.jointStateCallback = props.jointStateCallback;
@@ -145,6 +155,7 @@ export class Robot extends React.Component {
         this.isRunStoppedCallback = props.isRunStoppedCallback;
         this.hasBetaTeleopKitCallback = props.hasBetaTeleopKitCallback;
         this.stretchToolCallback = props.stretchToolCallback;
+        this.getDistanceResultCallback = props.getDistanceResultCallback;
     }
 
     setOnRosConnectCallback(callback: () => Promise<void>) {
@@ -348,10 +359,12 @@ export class Robot extends React.Component {
         this.createSwitchToPositionService();
         this.createRealsenseDepthSensingService();
         this.createGripperDepthSensingService();
+        this.createNavigationDepthSensingService();
         this.createExpandedGripperService();
         this.createRealsenseShowBodyPoseService();
         this.createComputeBodyPoseService();
         this.createRunStopService();
+        this.createGetDistanceService();
         this.createRobotFrameTFClient();
         this.createMapFrameTFClient();
         this.subscribeToHeadTiltTF();
@@ -736,6 +749,14 @@ export class Robot extends React.Component {
         });
     }
 
+    createNavigationDepthSensingService() {
+        this.setNavigationDepthSensingService = new ROSLIB.Service({
+            ros: this.ros,
+            name: "/navigation_depth_ar",
+            serviceType: "std_srvs/srv/SetBool",
+        });
+    }
+
     createExpandedGripperService() {
         this.setExpandedGripperService = new ROSLIB.Service({
             ros: this.ros,
@@ -766,6 +787,35 @@ export class Robot extends React.Component {
             name: "/runstop",
             serviceType: "std_srvs/srv/SetBool",
         });
+    }
+
+    createGetDistanceService() {
+        this.getDistanceService = new ROSLIB.Service({
+            ros: this.ros,
+            name: "/get_distance",
+            serviceType: "nrc_web_teleop/srv/GetDistance",
+        });
+    }
+
+    getDistance(scaled_u: number, scaled_v: number) {
+        var request = new ROSLIB.ServiceRequest({
+            scaled_u: scaled_u,
+            scaled_v: scaled_v,
+        });
+        this.getDistanceService?.callService(
+            request,
+            (response: {
+                distance: number;
+                success: boolean;
+            }) => {
+                if (this.getDistanceResultCallback) {
+                    this.getDistanceResultCallback(response);
+                }
+            },
+            (error: string) => {
+                console.error("GetDistance service call failed:", error);
+            }
+        );
     }
 
     createRobotFrameTFClient() {
@@ -854,6 +904,24 @@ export class Robot extends React.Component {
                       )
                     : console.log(
                           "Failed to set gripper depth sensing to",
+                          toggle
+                      );
+            }
+        );
+    }
+
+    setNavigationDepthSensing(toggle: boolean) {
+        var request = new ROSLIB.ServiceRequest({ data: toggle });
+        this.setNavigationDepthSensingService?.callService(
+            request,
+            (response: boolean) => {
+                response
+                    ? console.log(
+                          "Successfully set navigation depth sensing to",
+                          toggle
+                      )
+                    : console.log(
+                          "Failed to set navigation depth sensing to",
                           toggle
                       );
             }

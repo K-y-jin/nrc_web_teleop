@@ -25,6 +25,17 @@ function formatValue(value: number, unit: "m" | "deg" | "norm", min?: number, ma
     return `${value.toFixed(2)} m`;
 }
 
+function formatLimit(value: number, unit: "m" | "deg" | "norm", min?: number, max?: number): string {
+    if (unit === "deg") {
+        return `${(value * RAD2DEG).toFixed(0)}\u00B0`;
+    }
+    if (unit === "norm" && min !== undefined && max !== undefined) {
+        const normalized = (value - min) / (max - min);
+        return normalized.toFixed(1);
+    }
+    return `${value.toFixed(2)}`;
+}
+
 /** Vertical slider — used for Lift (H) and Pitch */
 export const LiftSlider = (props: SliderProps) => {
     const { jointName, label, robotPose, disabled, unit = "m", centerZero = false } = props;
@@ -74,6 +85,9 @@ export const LiftSlider = (props: SliderProps) => {
     return (
         <div className={`arm-slider-vertical${disabled ? " disabled" : ""}`}>
             <div className="arm-slider-label">{label}</div>
+            <div className="arm-slider-limit arm-slider-limit-max">
+                {formatLimit(max, unit, min, max)}
+            </div>
             <div
                 className="arm-slider-track-v"
                 onPointerDown={handleClick}
@@ -101,6 +115,9 @@ export const LiftSlider = (props: SliderProps) => {
                         }}
                     />
                 )}
+            </div>
+            <div className="arm-slider-limit arm-slider-limit-min">
+                {formatLimit(min, unit, min, max)}
             </div>
             <div className="arm-slider-value">
                 {formatValue(currentPosition, unit, min, max)}
@@ -157,33 +174,41 @@ export const ExtensionSlider = (props: SliderProps) => {
 
     return (
         <div className={`arm-slider-horizontal${disabled ? " disabled" : ""}`}>
-            <div
-                className="arm-slider-track-h"
-                onPointerDown={handleClick}
-                onPointerMove={handlePointerMove}
-            >
+            <div className="arm-slider-h-track-row">
+                <div className="arm-slider-limit arm-slider-limit-min-h">
+                    {formatLimit(min, unit, min, max)}
+                </div>
                 <div
-                    className={centerZero ? "arm-slider-fill-h-center" : "arm-slider-fill-h"}
-                    style={fillStyle}
-                />
-                {centerZero && (
+                    className="arm-slider-track-h"
+                    onPointerDown={handleClick}
+                    onPointerMove={handlePointerMove}
+                >
                     <div
-                        className="arm-slider-zero-h"
-                        style={{ left: `${zeroRatio * 100}%` }}
+                        className={centerZero ? "arm-slider-fill-h-center" : "arm-slider-fill-h"}
+                        style={fillStyle}
                     />
-                )}
-                <div
-                    className="arm-slider-thumb-h"
-                    style={{ left: `${positionRatio * 100}%` }}
-                />
-                {targetPosition !== null && (
+                    {centerZero && (
+                        <div
+                            className="arm-slider-zero-h"
+                            style={{ left: `${zeroRatio * 100}%` }}
+                        />
+                    )}
                     <div
-                        className="arm-slider-target-h"
-                        style={{
-                            left: `${toRatio(targetPosition) * 100}%`,
-                        }}
+                        className="arm-slider-thumb-h"
+                        style={{ left: `${positionRatio * 100}%` }}
                     />
-                )}
+                    {targetPosition !== null && (
+                        <div
+                            className="arm-slider-target-h"
+                            style={{
+                                left: `${toRatio(targetPosition) * 100}%`,
+                            }}
+                        />
+                    )}
+                </div>
+                <div className="arm-slider-limit arm-slider-limit-max-h">
+                    {formatLimit(max, unit, min, max)}
+                </div>
             </div>
             <div className="arm-slider-h-info">
                 <div className="arm-slider-label">{label}</div>

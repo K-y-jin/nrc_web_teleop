@@ -254,12 +254,33 @@ class MoveBaseToPointNode(Node):
             self.cam_height = T[2, 3]
 
         # Calculate the goal positions
+
+        # Navigation camera calibration (for /navigation_camera/image_raw/rotated)
+        nav_K = np.array([
+            [389.93427177,   0.0,          278.48238639],
+            [  0.0,          389.0470267,  363.26460058],
+            [  0.0,            0.0,          1.0         ],
+        ])
+        nav_D = np.array([
+            -0.29785045, 0.09304576, -0.00081603, -0.00068536, -0.01281908
+        ])
+        # Undistort (scaled_u, scaled_v) to the navigation camera's normalized
+        # ray direction, then take the horizontal angle around the Head Pan
+        # axis required to bring that ray onto the optical (view) center.
+        nav_image = self.cv_bridge.compressed_imgmsg_to_cv2(image_msg)
+        nav_h, nav_w = nav_image.shape[:2]
+        pixel_uv = np.array(
+            [[[raw_scaled_u * nav_w, raw_scaled_v * nav_h]]], dtype=np.float32
+        )
+        undistorted = cv2.undistortPoints(pixel_uv, nav_K, nav_D)
+        nav_pan_offset = -np.arctan(float(undistorted[0, 0, 0]))
+
         # Head Pan 회전축이 Base Rotation 축과 동일하다는 가정이 깔려있다. 
         initial_head_joint_states = self.controller.get_head_joint_states()
         initial_head_pan = initial_head_joint_states[Joint.HEAD_PAN]
         initial_head_tilt = initial_head_joint_states[Joint.HEAD_TILT]
 
-        target_theta = -1.0 * np.arctan2(raw_scaled_u - 0.5, 0.5) # HFOV 90deg
+        target_theta = nav_pan_offset # head pan to center (scaled_u, scaled_v)
         beta = np.pi * (127.0/180.0) # VFOV 127deg
         focal_length = 0.5 / np.tan(beta/2.0)
         alpha = -1.0 * np.arctan2(raw_scaled_v-0.5, focal_length)  # tan(alpha) = (y-0.5) / focal_length

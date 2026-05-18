@@ -25,8 +25,11 @@ export type cmd =
     | PlayTextToSpeech
     | StopTextToSpeech
     | ShowTabletCommand
+    | MoveGripperToPointCommand
+    | StopMoveGripperToPointCommand
     | StopShowTabletCommand
-    | HomeTheRobotCommand;
+    | HomeTheRobotCommand
+    | GetDistanceCommand;
 
 export interface VelocityCommand {
     stop: () => void;
@@ -73,6 +76,7 @@ export interface ToggleCommand {
         | "setFollowGripper"
         | "setRealsenseDepthSensing"
         | "setGripperDepthSensing"
+        | "setNavigationDepthSensing"
         | "setExpandedGripper"
         | "setRealsenseBodyPoseEstimate"
         | "setRunStop";
@@ -165,4 +169,10 @@ export interface StopTextToSpeech {
 
 export interface HomeTheRobotCommand {
     type: "homeTheRobot";
+}
+
+export interface GetDistanceCommand {
+    type: "getDistance";
+    scaled_u: number;
+    scaled_v: number;
 }

@@ -121,6 +121,7 @@ export type WebRTCMessage =
     | ActionStateMessage
     | MoveBaseToPointActionFeedbackMessage
     | MoveGripperToPointActionFeedbackMessage
+    | DistanceResultMessage
     | cmd;
 
 interface StopTrajectoryMessage {
@@ -233,6 +234,14 @@ export interface GoalStatusMessage {
 export interface OccupancyGridMessage {
     type: "occupancyGrid";
     message: ROSOccupancyGrid;
+}
+
+export interface DistanceResultMessage {
+    type: "distanceResult";
+    message: {
+        distance: number;
+        success: boolean;
+    };
 }
 
 export interface MapPoseMessage {

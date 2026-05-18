@@ -22,6 +22,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/MoveToPregrasp.action"
   "action/MoveBaseToPoint.action"
   "action/MoveGripperToPoint.action"
+  "srv/GetDistance.srv"
   "msg/TextToSpeech.msg"
   DEPENDENCIES geometry_msgs
 )
