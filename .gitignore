@@ -39,3 +39,6 @@ outcomes/*
 
 # Specialized URDFs
 urdf/*.urdf
+
+# ML model weights (download separately, do not commit)
+*.pth
