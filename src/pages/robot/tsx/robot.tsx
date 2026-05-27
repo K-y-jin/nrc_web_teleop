@@ -99,9 +99,17 @@ export class Robot extends React.Component {
     private textToSpeechTopic?: ROSLIB.Topic;
     private homeTheRobotService?: ROSLIB.Service;
     private getDistanceService?: ROSLIB.Service;
+    private isHeadPredReadyService?: ROSLIB.Service;
+    private isHeadPredReadyResultCallback?: (response: {
+        success: boolean;
+        message: string;
+    }) => void;
     private getDistanceResultCallback: (response: {
         distance: number;
         success: boolean;
+        is_navigable: boolean;
+        stop_scaled_u: number;
+        stop_scaled_v: number;
     }) => void;
 
     constructor(props: {
@@ -132,6 +140,13 @@ export class Robot extends React.Component {
         getDistanceResultCallback: (response: {
             distance: number;
             success: boolean;
+            is_navigable: boolean;
+            stop_scaled_u: number;
+            stop_scaled_v: number;
+        }) => void;
+        isHeadPredReadyResultCallback: (response: {
+            success: boolean;
+            message: string;
         }) => void;
     }) {
         super(props);
@@ -156,6 +171,7 @@ export class Robot extends React.Component {
         this.hasBetaTeleopKitCallback = props.hasBetaTeleopKitCallback;
         this.stretchToolCallback = props.stretchToolCallback;
         this.getDistanceResultCallback = props.getDistanceResultCallback;
+        this.isHeadPredReadyResultCallback = props.isHeadPredReadyResultCallback;
     }
 
     setOnRosConnectCallback(callback: () => Promise<void>) {
@@ -365,6 +381,7 @@ export class Robot extends React.Component {
         this.createComputeBodyPoseService();
         this.createRunStopService();
         this.createGetDistanceService();
+        this.createIsHeadPredReadyService();
         this.createRobotFrameTFClient();
         this.createMapFrameTFClient();
         this.subscribeToHeadTiltTF();
@@ -807,6 +824,9 @@ export class Robot extends React.Component {
             (response: {
                 distance: number;
                 success: boolean;
+                is_navigable: boolean;
+                stop_scaled_u: number;
+                stop_scaled_v: number;
             }) => {
                 if (this.getDistanceResultCallback) {
                     this.getDistanceResultCallback(response);
@@ -814,6 +834,29 @@ export class Robot extends React.Component {
             },
             (error: string) => {
                 console.error("GetDistance service call failed:", error);
+            }
+        );
+    }
+
+    createIsHeadPredReadyService() {
+        this.isHeadPredReadyService = new ROSLIB.Service({
+            ros: this.ros,
+            name: "/is_head_pred_ready",
+            serviceType: "std_srvs/srv/Trigger",
+        });
+    }
+
+    isHeadPredReady() {
+        var request = new ROSLIB.ServiceRequest({});
+        this.isHeadPredReadyService?.callService(
+            request,
+            (response: { success: boolean; message: string }) => {
+                if (this.isHeadPredReadyResultCallback) {
+                    this.isHeadPredReadyResultCallback(response);
+                }
+            },
+            (error: string) => {
+                console.error("IsHeadPredReady service call failed:", error);
             }
         );
     }
@@ -1359,6 +1402,14 @@ export class Robot extends React.Component {
                         this.moveBaseToPointFeedbackCallback({
                             new_scaled_u: message.values.feedback.new_scaled_u,
                             new_scaled_v: message.values.feedback.new_scaled_v,
+                            show_click_marker:
+                                message.values.feedback.show_click_marker,
+                            new_stop_scaled_u:
+                                message.values.feedback.new_stop_scaled_u,
+                            new_stop_scaled_v:
+                                message.values.feedback.new_stop_scaled_v,
+                            show_stop_marker:
+                                message.values.feedback.show_stop_marker,
                         });
                     }
                 }

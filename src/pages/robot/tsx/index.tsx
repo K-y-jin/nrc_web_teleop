@@ -61,6 +61,7 @@ export const robot = new Robot({
     hasBetaTeleopKitCallback: forwardHasBetaTeleopKit,
     stretchToolCallback: forwardStretchTool,
     getDistanceResultCallback: forwardGetDistanceResult,
+    isHeadPredReadyResultCallback: forwardIsHeadPredReadyResult,
 });
 
 export let connection: WebRTCConnection;
@@ -282,11 +283,26 @@ function forwardOccupancyGrid(occupancyGrid: ROSOccupancyGrid) {
 function forwardGetDistanceResult(response: {
     distance: number;
     success: boolean;
+    is_navigable: boolean;
+    stop_scaled_u: number;
+    stop_scaled_v: number;
 }) {
     if (!connection) throw "WebRTC connection undefined";
 
     connection.sendData({
         type: "distanceResult",
+        message: response,
+    });
+}
+
+function forwardIsHeadPredReadyResult(response: {
+    success: boolean;
+    message: string;
+}) {
+    if (!connection) throw "WebRTC connection undefined";
+
+    connection.sendData({
+        type: "isHeadPredReadyResult",
         message: response,
     });
 }
@@ -419,6 +435,9 @@ function handleMessage(message: WebRTCMessage) {
             break;
         case "getDistance":
             robot.getDistance(message.scaled_u, message.scaled_v);
+            break;
+        case "isHeadPredReady":
+            robot.isHeadPredReady();
             break;
     }
 }

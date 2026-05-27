@@ -840,7 +840,7 @@ class StretchIKControl:
         self,
         goal: PoseStamped,
         termination: TerminationCriteria,
-        rate_hz: float = 10.0,
+        rate_hz: float = 5.0,
         timeout_secs: float = 10.0,
         check_cancel: Callable[[], bool] = lambda: False,
         err_callback: Optional[Callable[[npt.NDArray[float]], None]] = None,
@@ -910,15 +910,34 @@ class StretchIKControl:
                 err_callback(err[0])
 
             # Calculate the joint velocities
-            K_base_translation = 1.0
+            # 너무 큰 K 는 거리에 비례한 vel 명령이 max_abs_vel 로 cap 되면서
+            # 가속 / 감속이 단계적이 안 되어 부자연스럽게 움직인다. 0.5 정도가
+            # 직관적 (1m 떨어졌을 때 0.5 m/s, 0.5m 에서 0.25 m/s).
+            K_base_translation = 1.0 # sim용
             vel = np.zeros(len(self.controllable_joints), dtype=float)
             joint_velocities = {}
             joint_velocities[Joint.BASE_TRANSLATION] = K_base_translation * err[0]  # m/s
 
             # Clip the velocities
-            self.node.get_logger().debug(f"Pre-Clip Velocities: {joint_velocities}")
             _, clipped_velocities = self.check_velocity_limits(joint_velocities)
-            self.node.get_logger().debug(f"Commanding Velocities: {clipped_velocities[Joint.BASE_TRANSLATION]}")
+
+            # 디버그: err / 명령 vel / goal-in-base / 현재 base in odom.
+            try:
+                ts = self.tf_buffer.lookup_transform(
+                    Frame.ODOM.value, Frame.BASE_LINK.value, Time()
+                )
+                base_x = ts.transform.translation.x
+                base_y = ts.transform.translation.y
+            except Exception:
+                base_x = float("nan")
+                base_y = float("nan")
+            self.node.get_logger().info(
+                f"[translate] err={err[0]:+.4f}m  "
+                f"cmd_vel={clipped_velocities[Joint.BASE_TRANSLATION]:+.3f}m/s  "
+                f"goal_in_base=({goal_x[0]:+.3f}, {goal_x[1]:+.3f})  "
+                f"odom_base=({base_x:+.4f}, {base_y:+.4f})",
+                throttle_duration_sec=0.5,
+            )
 
             # Send base commands
             base_vel = Twist()

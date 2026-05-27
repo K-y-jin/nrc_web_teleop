@@ -122,6 +122,7 @@ export type WebRTCMessage =
     | MoveBaseToPointActionFeedbackMessage
     | MoveGripperToPointActionFeedbackMessage
     | DistanceResultMessage
+    | IsHeadPredReadyResultMessage
     | cmd;
 
 interface StopTrajectoryMessage {
@@ -214,6 +215,10 @@ export interface MoveBaseToPointActionFeedbackMessage {
 export interface MoveBaseToPointActionFeedback {
     new_scaled_u: number;
     new_scaled_v: number;
+    show_click_marker: boolean;
+    new_stop_scaled_u: number;
+    new_stop_scaled_v: number;
+    show_stop_marker: boolean;
 }
 
 export interface MoveGripperToPointActionFeedbackMessage {
@@ -241,6 +246,17 @@ export interface DistanceResultMessage {
     message: {
         distance: number;
         success: boolean;
+        is_navigable: boolean;
+        stop_scaled_u: number;
+        stop_scaled_v: number;
+    };
+}
+
+export interface IsHeadPredReadyResultMessage {
+    type: "isHeadPredReadyResult";
+    message: {
+        success: boolean;
+        message: string;
     };
 }
 

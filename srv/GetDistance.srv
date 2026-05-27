@@ -2,6 +2,14 @@
 float64 scaled_u
 float64 scaled_v
 ---
-# Response: 해당 위치의 predicted depth 값 (mm)
+# Response
+# distance: 클릭 픽셀까지의 base 기준 거리(m, raw − BASE_MARGIN). UI 는
+#           이 값을 그대로 클릭 지점 위에 green 라벨로 표기한다.
 float64 distance
 bool success
+# 향후 ground 판정용. 현재 미리보기는 사용하지 않으며 항상 true.
+bool is_navigable
+# BASE_MARGIN 만큼 base 쪽으로 당긴, 실제 base 정지 예상 위치의 정규화 픽셀
+# 좌표(0~1). UI 는 이 위치에 red 마커를 표기한다.
+float64 stop_scaled_u
+float64 stop_scaled_v

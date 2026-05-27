@@ -13,6 +13,7 @@ from geometry_msgs.msg import Pose, PoseStamped, TransformStamped
 from rclpy.duration import Duration
 from rclpy.time import Time
 from sensor_msgs.msg import CompressedImage, Image
+from tf_transformations import quaternion_matrix
 
 # The fixed header that ROS2 Humble's compressed depth image transport plugin prepends to
 # the data. The exact value was empirically determined, but the below link shows the code
@@ -375,6 +376,51 @@ def remaining_time(
     if return_secs:
         return diff.nanoseconds / 1.0e9
     return diff
+
+
+def tf_lookup_matrix(
+    tf_buffer: tf2_ros.Buffer,
+    parent_frame: str,
+    child_frame: str,
+    timeout: Duration = Duration(seconds=0.5),
+    stamp=None,
+) -> Optional[npt.NDArray]:
+    """
+    실제 TF 트리에서 parent_frame ← child_frame 변환을 조회해 4x4 동차 행렬
+    (m 단위)을 반환. 실패 시 None.
+
+    stamp 가 주어지면 그 시점의 변환을 조회한다(예: 이미지 헤더 stamp).
+    None 이면 Time(0)(= 최신 가용) 으로 조회. 이미지 캡처 시점에 head 가
+    움직이고 있을 가능성이 있으면 stamp 를 명시해 동기화 정확도를 높일 것.
+
+    head_pan/head_tilt 같은 실시간 관절 영향을 반영해야 할 때 사용한다.
+    `StretchIKControl.get_transform`은 IK URDF(head joints 가 fixed)로
+    FK를 푸므로 head 자세가 반영되지 않는다는 점에 유의.
+    """
+    lookup_stamp = stamp if stamp is not None else Time()
+    try:
+        ts: TransformStamped = tf_buffer.lookup_transform(
+            parent_frame, child_frame, lookup_stamp, timeout
+        )
+    except (
+        tf2.ConnectivityException,
+        tf2.ExtrapolationException,
+        tf2.InvalidArgumentException,
+        tf2.LookupException,
+        tf2.TimeoutException,
+        tf2.TransformException,
+    ):
+        return None
+    T = quaternion_matrix([
+        ts.transform.rotation.x,
+        ts.transform.rotation.y,
+        ts.transform.rotation.z,
+        ts.transform.rotation.w,
+    ])
+    T[0, 3] = ts.transform.translation.x
+    T[1, 3] = ts.transform.translation.y
+    T[2, 3] = ts.transform.translation.z
+    return T
 
 
 def tf2_transform(

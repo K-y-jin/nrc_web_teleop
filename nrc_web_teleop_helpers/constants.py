@@ -65,7 +65,72 @@ class Frame(Enum):
     CAMERA_COLOR_FRAME = "camera_color_frame"
     CAMERA_DEPTH_FRAME = "camera_depth_frame"
     HEAD_PAN_LINK = "link_head_pan"
+    NAV_CAM_LINK = "link_head_nav_cam"
 
+
+# Navigation camera calibration for the /navigation_camera/image_raw/rotated/
+# compressed topic. Shared by move_base_to_point.py, move_gripper_to_point.py
+# and depth_helper.py; update here only.
+NAV_CAMERA_K = np.array([
+    [389.93427177,   0.0,          278.48238639],
+    [  0.0,          389.0470267,  363.26460058],
+    [  0.0,            0.0,          1.0         ],
+])
+NAV_CAMERA_D = np.array([
+    -0.29785045, 0.09304576, -0.00081603, -0.00068536, -0.01281908
+])
+
+# Navigation image size (px) of the /navigation_camera/image_raw/rotated/
+# compressed topic. Matches NAV_CAMERA_K's principal point (cx≈278, cy≈363).
+NAV_IMAGE_WIDTH = 600
+NAV_IMAGE_HEIGHT = 800
+
+# Rotation from the link_head_nav_cam URDF frame to the navigation camera's
+# optical frame (OpenCV convention: +z forward, +x right, +y down) that
+# NAV_CAMERA_K / NAV_CAMERA_D are calibrated in. link_head_nav_cam is +z
+# forward, +x down, +y left, so a valid optical frame is a 90 deg roll about
+# the forward axis.
+# NOTE: the physical sensor mounting and the ROTATE_90_CCW applied to the
+# /navigation_camera/image_raw/rotated topic may add another 90/180/270 deg
+# in-plane roll. Verify on-robot and, if the anchor pixel looks rotated or
+# mirrored, replace this with one of the other in-plane rolls:
+#   Rz(0):   [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+#   Rz(90):  [[0, -1, 0], [1, 0, 0], [0, 0, 1]]   (default below)
+#   Rz(180): [[-1, 0, 0], [0, -1, 0], [0, 0, 1]]
+#   Rz(270): [[0, 1, 0], [-1, 0, 0], [0, 0, 1]]
+NAV_OPTICAL_FROM_LINK = np.array([
+    [-1.0,  0.0, 0.0],
+    [ 0.0, -1.0, 0.0],
+    [ 0.0,  0.0, 1.0],
+])
+
+
+# move_base_to_point.py 거리 미리보기 / 베이스 이동 기준값.
+# TILT_READY: 이 head_tilt 각도(rad)에서 nav 카메라에 로봇 자신의 base가 보인다.
+# TILT_READY_TOLERANCE: TILT_READY 도달 판정 허용 오차(rad).
+# DEPTH_REF: TILT_READY 자세에서 nav 카메라에 보이는 base 기준점 (row, col,
+#   depth_mm). get_pred_depth(Depth-Anything) 예측의 metric 스케일을 고정한다.
+#   row/col은 nav 이미지(NAV_IMAGE_WIDTH x NAV_IMAGE_HEIGHT) 픽셀.
+# TODO: TILT_READY는 실제 로봇에서 base가 화면에 들어오는 각도로 캘리브레이션할 것.
+TILT_READY = -45.0 * np.pi / 180.0 # -45.0 deg
+TILT_READY_TOLERANCE = 0.05
+# row, col 픽셀 + 그 픽셀의 실측 depth(mm). depth_mm 은 get_pred_depth 의
+# uint16 스케일과 일치시키기 위해 mm 단위로만 사용되는 내부 상수다. 코드의
+# 나머지 부분은 모두 m 단위로 통일되어 있다.
+DEPTH_REF = (695, 300, 1084)  # row, col, depth_mm
+
+# Move Gripper 액션: base가 멈춘 뒤 팔이 타깃까지 닿을 수 있도록 base를
+# 팔 기본 도달 길이만큼 앞에 정지시킨다 (raw 거리 - DEFAULT_ARM_LENGTH).
+DEFAULT_ARM_LENGTH = 0.8  # m
+# Move Base 액션: base 자체를 타깃 근처까지 보낼 때, 충돌 회피용으로
+# 남겨두는 안전 마진(m). raw 거리 - BASE_MARGIN 만큼 전진한다.
+BASE_MARGIN = 0.35  # m
+
+# Ground 판정 — DEPTH_REF 픽셀에서 클릭 픽셀까지 직선상의 pred_depth가
+# 스무스하게 증가하는지를 판정할 때, 한 스텝의 깊이 변화가 평균 스텝의
+# NAVIGABLE_MAX_STEP_RATIO배를 초과하면 ground가 아닌 것으로 본다.
+NAVIGABLE_LINE_SAMPLES = 64
+NAVIGABLE_MAX_STEP_RATIO = 3.0
 
 
 class ControlMode(Enum):
@@ -126,7 +191,7 @@ def get_stow_configuration(
             ] = 0.40 # 0 to about 1.1m
              # This is chosen so even when the gripper is pointing down, it doesn't hit the base.
         elif joint == Joint.WRIST_YAW:
-            retval[joint] = 3.19579  # Should match src/shared/util.tsx
+            retval[joint] = 0.7854 # 3.19579  # Should match src/shared/util.tsx
         elif joint == Joint.WRIST_PITCH:
             retval[joint] = -0.497 # Should match src/shared/util.tsx
         elif joint == Joint.WRIST_ROLL:
@@ -136,6 +201,21 @@ def get_stow_configuration(
                 joint
             ] = 0.0  # close gripper when stowed. An open gripper can sometimes get caught in the mast.
     return retval
+
+
+def get_pred_ready_configuration() -> Dict[Joint, float]:
+    """
+    Depth prediction(`get_pred_depth` + `DEPTH_REF`) 를 위해 base 가 카메라에
+    선명히 잡히고, base 회전/이동 시 주변 충돌이 최소화되도록 팔/손목을
+    수납한 자세. `move_base_to_point` 액션의 PRED_READY state 에서 사용.
+    """
+    return {
+        Joint.ARM_L0: 0.0,
+        Joint.ARM_LIFT: 0.9,
+        Joint.WRIST_YAW: 0.7854,
+        Joint.WRIST_PITCH: -0.497,
+        Joint.WRIST_ROLL: 0.0,
+    }
 
 
 def adjust_arm_lift_for_base_collision(

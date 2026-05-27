@@ -7,8 +7,7 @@ import traceback
 from typing import Union, Generator, List, Optional, Tuple
 import cv2
 import numpy as np
-import numpy.typing as npt
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Point, PoseStamped, Quaternion
 from std_msgs.msg import Header
 
 import rclpy
@@ -29,16 +28,19 @@ from sensor_msgs.msg import CameraInfo, CompressedImage, Image, PointCloud2
 
 # Local Imports
 from nrc_web_teleop.action import MoveGripperToPoint
-from nrc_web_teleop.srv import GetDistance
 from nrc_web_teleop_helpers.constants import (
     Joint,
     Frame,
+    DEFAULT_ARM_LENGTH,
 )
+from nrc_web_teleop_helpers.functions import compute_click_point_in_base
 from nrc_web_teleop_helpers.conversions import (
     deproject_pixel_to_pointcloud_point,
     depth_img_to_pointcloud,
     remaining_time,
     ros_msg_to_cv2_image,
+    tf2_transform,
+    tf_lookup_matrix,
 )
 from nrc_web_teleop_helpers.move_to_action_state import MoveToActionState
 from nrc_web_teleop_helpers.stretch_ik_control import (
@@ -185,13 +187,8 @@ class MoveGripperToPointNode(Node):
             callback_group=ReentrantCallbackGroup(),
         )
 
-        # Create the GetDistance service server
-        self.get_distance_service = self.create_service(
-            GetDistance,
-            "get_distance",
-            self.get_distance_callback,
-            callback_group=ReentrantCallbackGroup(),
-        )
+        # NOTE: `/get_distance` 서비스는 `move_base_to_point.py`가 제공한다.
+        # 두 노드가 같은 이름으로 등록할 수 없어 여기서는 제거됨. (DESIGN.md 참고)
 
         return True
     
@@ -407,7 +404,7 @@ class MoveGripperToPointNode(Node):
 
         # Execute the states
         motion_executors: List[Generator[MotionGeneratorRetval, None, None]] = []
-        states = MoveToActionState.get_state_for_move_gripper_to_point()
+        states = MoveToActionState.get_states_for_move_gripper_to_point()
         self.get_logger().info(f"All States: {states}")
 
         state_i = 0
@@ -449,6 +446,7 @@ class MoveGripperToPointNode(Node):
         feedback.new_scaled_u = 0.5
         feedback.new_scaled_v = focal_length * np.tan(tilt_theta - (initial_head_tilt+alpha)) + 0.5
         
+        # Head와 ARM을 클릭 좌표 방향으로 향하도록 Base rotation과 head pan 설정
         goal_positions = {}
         if initial_head_pan + target_theta < np.pi/2:
             goal_positions[Joint.BASE_ROTATION] = initial_head_pan + target_theta + np.pi/2
@@ -459,6 +457,71 @@ class MoveGripperToPointNode(Node):
 
         goal_positions[Joint.ARM_LIFT] = None
         goal_positions[Joint.ARM_L0] = None
+
+        # Base translation: 클릭 픽셀을 TF로 (T0) base_link 의 3D 점(m)으로
+        # 환산해, 팔이 닿는 위치(= 클릭점에서 DEFAULT_ARM_LENGTH 만큼 base
+        # 쪽) 를 base_origin 의 목표로 설정. odom 으로 변환해 두면
+        # translate_base_to_goal_pose 가 world 기준으로 추종한다 (pregrasp 패턴).
+        try:
+            nav_image_cv = ros_msg_to_cv2_image(image_msg, self.cv_bridge)
+            # IK URDF는 head joints가 fixed라 controller.get_transform 으로는
+            # 실 head_tilt/head_pan 반영이 안 된다. 실 TF 트리 조회 사용.
+            # stamp = 이미지 헤더 시점 (캡처 순간의 head 자세와 동기화).
+            T_base_from_nav_link = tf_lookup_matrix(
+                self.tf_buffer, Frame.BASE_LINK.value,
+                Frame.NAV_CAM_LINK.value, self.tf_timeout,
+                stamp=image_msg.header.stamp,
+            )
+            if T_base_from_nav_link is None:
+                raise RuntimeError(
+                    "Failed to lookup base_link <- link_head_nav_cam TF"
+                )
+            result = compute_click_point_in_base(
+                nav_image_cv, raw_scaled_u, raw_scaled_v, T_base_from_nav_link,
+            )
+            click_xyz = None if result is None else result[0]
+        except Exception:
+            self.get_logger().error(traceback.format_exc())
+            click_xyz = None
+        if click_xyz is None:
+            self.get_logger().warning(
+                "Failed to compute click point; skipping base translation"
+            )
+            # goal_pose 를 현재 base_link 원점으로 두면 controller 가 즉시 종료.
+            goal_pose.header.frame_id = Frame.BASE_LINK.value
+            goal_pose.header.stamp = image_msg.header.stamp
+            goal_pose.pose.position = Point(x=0.0, y=0.0, z=0.0)
+            goal_pose.pose.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        else:
+            cx, cy = float(click_xyz[0]), float(click_xyz[1])
+            d = float(np.hypot(cx, cy))  # m
+            if d == 0.0:
+                self.get_logger().warning("Click point at base origin")
+                arm_frac = 0.0
+            else:
+                arm_frac = (d - DEFAULT_ARM_LENGTH) / d
+            goal_base_x = cx * arm_frac
+            goal_base_y = cy * arm_frac
+            goal_pose.header.frame_id = Frame.BASE_LINK.value
+            goal_pose.header.stamp = image_msg.header.stamp
+            goal_pose.pose.position = Point(x=goal_base_x, y=goal_base_y, z=0.0)
+            goal_pose.pose.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+            self.get_logger().info(
+                f"##### gripper goal in T0 base: x={goal_base_x:.3f} m, "
+                f"y={goal_base_y:.3f} m (click d={d:.3f} m)"
+            )
+        # T0 base_link → odom (world 고정 frame) 변환. 이후 MOVE_BASE state 가
+        # 매 iteration 현재 base_link 로 다시 변환해 err 를 계산한다.
+        ok, goal_pose_odom = tf2_transform(
+            self.tf_buffer, goal_pose, Frame.ODOM.value, self.tf_timeout,
+        )
+        if ok:
+            goal_pose.header = goal_pose_odom.header
+            goal_pose.pose = goal_pose_odom.pose
+        else:
+            self.get_logger().warning(
+                "Failed to transform goal_pose to odom; using base_link frame"
+            )
 
         def update_feedback_and_publish_feedback(distance_error: float):
             nonlocal tilt_theta, beta, focal_length
@@ -690,56 +753,6 @@ class MoveGripperToPointNode(Node):
 
         return x, y, z, depth_msg.header
 
-    def get_distance_callback(self, request, response):
-        """
-        GetDistance 서비스 콜백.
-        클릭한 좌표(scaled_u, scaled_v)의 predicted depth 값을 반환한다.
-        """
-        scaled_u = request.scaled_u
-        scaled_v = request.scaled_v
-        self.get_logger().info(
-            f"GetDistance request: scaled_u={scaled_u}, scaled_v={scaled_v}"
-        )
-
-        try:
-            # 오버헤드 카메라(navigation camera) 이미지로 depth prediction
-            with self.latest_navigation_camera_image_lock:
-                nav_image_msg = self.latest_navigation_camera_image
-            if nav_image_msg is None:
-                self.get_logger().error("No navigation camera image received yet")
-                response.success = False
-                return response
-
-            rgb_image = ros_msg_to_cv2_image(nav_image_msg, self.cv_bridge)
-
-            # realsense depth 이미지의 중앙 픽셀에서 depth 값을 참조 깊이로 사용
-            with self.latest_realsense_depth_lock:
-                depth_msg = self.latest_realsense_depth
-            if depth_msg is None:
-                self.get_logger().error("No realsense depth image received yet")
-                response.success = False
-                return response
-            depth_image = ros_msg_to_cv2_image(depth_msg, self.cv_bridge)
-            center_r = depth_image.shape[0] // 2
-            center_c = depth_image.shape[1] // 2
-            ref_depth = float(depth_image[center_r, center_c])
-
-            pred_depth = get_pred_depth(rgb_image, ref_rcz=(center_r, center_c, ref_depth))
-            utils.save_image(pred_depth, f'{ref_depth}', 'test')
-            H, W = pred_depth.shape[:2]
-            px = int(scaled_u * W)
-            py = int(scaled_v * H)
-            px = np.clip(px, 0, W - 1)
-            py = np.clip(py, 0, H - 1)
-
-            response.distance = float(pred_depth[py, px]) # mm
-            response.success = True
-
-        except Exception as e:
-            self.get_logger().error(f"GetDistance failed: {e}")
-            response.success = False
-
-        return response
 
 def main(args: Optional[List[str]] = None):
     rclpy.init(args=args)

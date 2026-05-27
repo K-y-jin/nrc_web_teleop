@@ -29,7 +29,8 @@ export type cmd =
     | StopMoveGripperToPointCommand
     | StopShowTabletCommand
     | HomeTheRobotCommand
-    | GetDistanceCommand;
+    | GetDistanceCommand
+    | IsHeadPredReadyCommand;
 
 export interface VelocityCommand {
     stop: () => void;
@@ -175,4 +176,8 @@ export interface GetDistanceCommand {
     type: "getDistance";
     scaled_u: number;
     scaled_v: number;
+}
+
+export interface IsHeadPredReadyCommand {
+    type: "isHeadPredReady";
 }

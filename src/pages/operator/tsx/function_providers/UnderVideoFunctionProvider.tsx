@@ -136,7 +136,13 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
      * interface.
      */
     private selectedLocationScaledXYCallback?: (
-        scaledXY: [number, number]
+        scaledXY: [number, number] | null
+    ) => void = undefined;
+    /**
+     * (B) 액션 진행 중 stop 마커 위치를 갱신/숨기는 콜백. null = 숨김.
+     */
+    private stopScaledXYCallback?: (
+        scaledXY: [number, number] | null
     ) => void = undefined;
     /**
      * Callback function to update the distance result in the operator interface.
@@ -144,6 +150,9 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
     private distanceResultCallback?: (result: {
         distance: number;
         success: boolean;
+        is_navigable: boolean;
+        stop_scaled_u: number;
+        stop_scaled_v: number;
     }) => void = undefined;
     /**
      * Store the timestamp at which the last moveToPregrasp state was received
@@ -195,10 +204,21 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
         feedback: MoveBaseToPointActionFeedback
     ) {
         if (this.selectedLocationScaledXYCallback) {
-            this.selectedLocationScaledXYCallback([
-                feedback.new_scaled_u,
-                feedback.new_scaled_v,
-            ]);
+            this.selectedLocationScaledXYCallback(
+                feedback.show_click_marker
+                    ? [feedback.new_scaled_u, feedback.new_scaled_v]
+                    : null
+            );
+        }
+        if (this.stopScaledXYCallback) {
+            this.stopScaledXYCallback(
+                feedback.show_stop_marker
+                    ? [
+                          feedback.new_stop_scaled_u,
+                          feedback.new_stop_scaled_v,
+                      ]
+                    : null
+            );
         }
     }
 
@@ -610,14 +630,23 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
      * @param callback operator's callback function to update selected location scaled XY
      */
     public setSelectedLocationScaledXYCallback(
-        callback: (scaledXY: [number, number]) => void
+        callback: (scaledXY: [number, number] | null) => void
     ) {
         this.selectedLocationScaledXYCallback = callback;
+    }
+
+    public setStopScaledXYCallback(
+        callback: (scaledXY: [number, number] | null) => void
+    ) {
+        this.stopScaledXYCallback = callback;
     }
 
     public handleDistanceResult(result: {
         distance: number;
         success: boolean;
+        is_navigable: boolean;
+        stop_scaled_u: number;
+        stop_scaled_v: number;
     }) {
         if (this.distanceResultCallback) {
             this.distanceResultCallback(result);
@@ -628,6 +657,9 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
         callback: (result: {
             distance: number;
             success: boolean;
+            is_navigable: boolean;
+            stop_scaled_u: number;
+            stop_scaled_v: number;
         }) => void
     ) {
         this.distanceResultCallback = callback;
@@ -635,5 +667,29 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
 
     public requestDistance(scaled_u: number, scaled_v: number) {
         FunctionProvider.remoteRobot?.getDistance(scaled_u, scaled_v);
+    }
+
+    private isHeadPredReadyResultCallback?: (result: {
+        success: boolean;
+        message: string;
+    }) => void;
+
+    public handleIsHeadPredReadyResult(result: {
+        success: boolean;
+        message: string;
+    }) {
+        if (this.isHeadPredReadyResultCallback) {
+            this.isHeadPredReadyResultCallback(result);
+        }
+    }
+
+    public setIsHeadPredReadyResultCallback(
+        callback: (result: { success: boolean; message: string }) => void
+    ) {
+        this.isHeadPredReadyResultCallback = callback;
+    }
+
+    public requestIsHeadPredReady() {
+        FunctionProvider.remoteRobot?.isHeadPredReady();
     }
 }

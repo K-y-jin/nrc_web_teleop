@@ -251,6 +251,12 @@ function handleWebRTCMessage(message: WebRTCMessage | WebRTCMessage[]) {
             console.log("distanceResult", message.message);
             underVideoFunctionProvider.handleDistanceResult(message.message);
             break;
+        case "isHeadPredReadyResult":
+            console.log("isHeadPredReadyResult", message.message);
+            underVideoFunctionProvider.handleIsHeadPredReadyResult(
+                message.message
+            );
+            break;
         default:
             throw Error(`unhandled WebRTC message type ${message.type}`);
     }

@@ -71,6 +71,9 @@ export const CameraView = (props: CustomizableComponentProps) => {
     const [selectLocationScaledXY, setSelectLocationScaledXY] = React.useState<
         [number, number] | null
     >(null);
+    // Pending click 좌표 — /is_head_pred_ready 응답 대기 중 임시 보관.
+    // success=True 면 selectLocationScaledXY 로 commit, 아니면 폐기.
+    const pendingClickRef = React.useRef<[number, number] | null>(null);
     const [isMovingBaseToPoint, setIsMovingBaseToPoint] =
         React.useState<boolean>(false);
     const [isMovingGripperToPoint, setIsMovingGripperToPoint] =
@@ -88,6 +91,10 @@ export const CameraView = (props: CustomizableComponentProps) => {
     const [predictedDistance, setPredictedDistance] = React.useState<
         number | null
     >(null);
+    // base 정지 예상 위치 (DEFAULT_ARM_LENGTH_MM 만큼 base 쪽으로 당긴) 정규화 픽셀.
+    const [stopScaledXY, setStopScaledXY] = React.useState<
+        [number, number] | null
+    >(null);
     const definition = React.useMemo(
         () => props.definition as CameraViewDefinition,
         [props.definition]
@@ -99,6 +106,7 @@ export const CameraView = (props: CustomizableComponentProps) => {
         }
         setSelectLocationScaledXY(null);
         setPredictedDistance(null);
+        setStopScaledXY(null);
     }
     underVideoFunctionProvider.setMoveBaseToPointOperatorCallbackSub(
         moveBaseToPointStateCallback
@@ -110,6 +118,7 @@ export const CameraView = (props: CustomizableComponentProps) => {
         }
         setSelectLocationScaledXY(null);
         setPredictedDistance(null);
+        setStopScaledXY(null);
     }
     underVideoFunctionProvider.setMoveGripperToPointOperatorCallbakcSub(
         moveGripperToPointStateCallback
@@ -144,14 +153,34 @@ export const CameraView = (props: CustomizableComponentProps) => {
             underVideoFunctionProvider.setSelectedLocationScaledXYCallback(
                 setSelectLocationScaledXY
             );
+            // (B) 액션 피드백이 stop 마커 위치/표시여부를 갱신.
+            underVideoFunctionProvider.setStopScaledXYCallback(
+                setStopScaledXY
+            );
             // distance 결과 수신 콜백 설정
             underVideoFunctionProvider.setDistanceResultCallback(
                 (result) => {
                     if (result.success) {
                         setPredictedDistance(result.distance);
+                        setStopScaledXY([
+                            result.stop_scaled_u,
+                            result.stop_scaled_v,
+                        ]);
                     } else {
                         setPredictedDistance(null);
+                        setStopScaledXY(null);
                     }
+                }
+            );
+            // /is_head_pred_ready 응답: success=True 면 pending 클릭을 마커로
+            // commit, False 면 head 가 -45° 로 이동 중이므로 무시 (사용자가
+            // 다시 클릭하면 됨).
+            underVideoFunctionProvider.setIsHeadPredReadyResultCallback(
+                (result) => {
+                    if (result.success && pendingClickRef.current) {
+                        setSelectLocationScaledXY(pendingClickRef.current);
+                    }
+                    pendingClickRef.current = null;
                 }
             );
         }
@@ -253,6 +282,7 @@ export const CameraView = (props: CustomizableComponentProps) => {
                 setIsMovingBaseToPoint(false);
                 setSelectLocationScaledXY(null);
                 setPredictedDistance(null);
+                setStopScaledXY(null);
             }
             // 그리퍼 이동 중일 때: 이동 취소
             if (isMovingGripperToPoint) {
@@ -262,13 +292,16 @@ export const CameraView = (props: CustomizableComponentProps) => {
                 setIsMovingGripperToPoint(false);
                 setSelectLocationScaledXY(null);
                 setPredictedDistance(null);
-            // 이동 중이 아닐 때: 클릭 좌표를 정규화하여 위치 선택 + depth prediction 요청
+            // 이동 중이 아닐 때: 클릭을 임시 저장하고 /is_head_pred_ready 호출.
+            // head_tilt=-45° 면 마커 commit, 아니면 head 가 그 자세로 이동.
             } else {
                 let scaled_u = x / (right - left);
                 let scaled_v = y / (bottom - top);
-                setSelectLocationScaledXY([scaled_u, scaled_v]);
+                pendingClickRef.current = [scaled_u, scaled_v];
+                setSelectLocationScaledXY(null);
                 setPredictedDistance(null);
-                underVideoFunctionProvider.requestDistance(scaled_u, scaled_v);
+                setStopScaledXY(null);
+                underVideoFunctionProvider.requestIsHeadPredReady();
                 console.log("scaled x", scaled_u, "scaled y", scaled_v);
             }
         // 그 외 카메라 뷰: 위치 선택 초기화
@@ -361,6 +394,13 @@ export const CameraView = (props: CustomizableComponentProps) => {
             </>
         );
     } else if (props.definition.id == CameraViewId.overhead) {
+        // overhead 뷰: Head tilt 버튼 클릭 시 head_tilt 가 -45° 에서 벗어나므로
+        // 기존에 표시된 red '+' 마커는 무효화 → setSelectLocationScaledXY(null).
+        const clearMarkerIfPresent = () => {
+            if (selectLocationScaledXY !== null) {
+                setSelectLocationScaledXY(null);
+            }
+        };
         videoOverlay = (
             <>
                 {overlayDefinition?.type !== ComponentType.PredictiveDisplay &&
@@ -370,9 +410,22 @@ export const CameraView = (props: CustomizableComponentProps) => {
                             constrainedHeight,
                         })}
                     >
-                        {panTiltButtons.map((dir) => (
-                            <PanTiltButton direction={dir} key={dir} />
-                        ))}
+                        {panTiltButtons.map((dir) => {
+                            const isHeadTilt =
+                                dir === ButtonPadButton.CameraTiltUp ||
+                                dir === ButtonPadButton.CameraTiltDown;
+                            return (
+                                <PanTiltButton
+                                    direction={dir}
+                                    key={dir}
+                                    onAfterClick={
+                                        isHeadTilt
+                                            ? clearMarkerIfPresent
+                                            : undefined
+                                    }
+                                />
+                            );
+                        })}
                     </div>
                 ) : (
                     <></>
@@ -441,8 +494,19 @@ export const CameraView = (props: CustomizableComponentProps) => {
                         whiteSpace: "nowrap",
                     }}
                 >
-                    {(predictedDistance / 1000).toFixed(2)} m
+                    {predictedDistance.toFixed(2)} m
                 </span>
+            ) : undefined}
+            {stopScaledXY ? (
+                <AddIcon
+                    style={{
+                        position: "absolute",
+                        left: (stopScaledXY[0] * 100).toString() + "%",
+                        top: (stopScaledXY[1] * 100).toString() + "%",
+                        color: "red",
+                        transform: "translateX(-50%) translateY(-50%)",
+                    }}
+                />
             ) : undefined}
         </div>
     );
@@ -483,7 +547,10 @@ export const CameraView = (props: CustomizableComponentProps) => {
  *
  * @param props the direction of the button {@link PanTiltButton}
  */
-const PanTiltButton = (props: { direction: ButtonPadButton }) => {
+const PanTiltButton = (props: {
+    direction: ButtonPadButton;
+    onAfterClick?: () => void;
+}) => {
     let gridPosition: { gridRow: number; gridColumn: number }; // the position in the 3x3 grid around the video element
     let rotation: string; // how to rotate the arrow icon to point in the correct direction
     const functs = buttonFunctionProvider.provideFunctions(props.direction);
@@ -510,11 +577,16 @@ const PanTiltButton = (props: { direction: ButtonPadButton }) => {
             throw Error(`unknown pan tilt button direction ${props.direction}`);
     }
 
+    const handleMouseDown = () => {
+        if (functs.onClick) functs.onClick();
+        if (props.onAfterClick) props.onAfterClick();
+    };
+
     return (
         <button
             style={gridPosition}
             className={props.direction}
-            onMouseDown={functs.onClick}
+            onMouseDown={handleMouseDown}
             onMouseUp={functs.onRelease}
             onMouseLeave={functs.onLeave}
         >

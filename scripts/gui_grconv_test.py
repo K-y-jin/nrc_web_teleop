@@ -261,9 +261,16 @@ class GrConvGui:
         self.overlay_label.config(image="")
 
     def _load_depth_file(self, name):
-        """동일 번호의 depth_*.png을 읽어 Depth file 패널에 표시하고 ref_rcz를 계산한다."""
+        """동일 번호의 depth_*.png을 읽어 Depth file 패널에 표시하고 ref_rcz를 계산한다.
+        depth_*.png이 없으면 pred_*.png를 depth 파일로 사용한다."""
         depth_name = name.replace("color_", "depth_", 1)
-        depth_img = cv2.imread(os.path.join(self.image_dir, depth_name), cv2.IMREAD_UNCHANGED)
+        depth_path = os.path.join(self.image_dir, depth_name)
+        if not os.path.isfile(depth_path):
+            pred_name = name.replace("color_", "pred_", 1)
+            pred_path = os.path.join(self.image_dir, pred_name)
+            if os.path.isfile(pred_path):
+                depth_path = pred_path
+        depth_img = cv2.imread(depth_path, cv2.IMREAD_UNCHANGED)
         self.depth_file_image = depth_img
         self.ref_rcz = self._compute_ref_rcz()
         if self.ref_rcz is None:

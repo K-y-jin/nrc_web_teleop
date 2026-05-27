@@ -23,6 +23,7 @@ import {
     HomeTheRobotCommand,
     ShowTabletCommand,
     GetDistanceCommand,
+    IsHeadPredReadyCommand,
 } from "shared/commands";
 import {
     ValidJointStateDict,
@@ -274,6 +275,13 @@ export class RemoteRobot extends React.Component<{}, any> {
             type: "getDistance",
             scaled_u: scaled_u,
             scaled_v: scaled_v,
+        };
+        this.robotChannel(cmd);
+    }
+
+    isHeadPredReady() {
+        let cmd: IsHeadPredReadyCommand = {
+            type: "isHeadPredReady",
         };
         this.robotChannel(cmd);
     }
