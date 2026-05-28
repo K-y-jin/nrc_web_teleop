@@ -772,6 +772,51 @@ class MoveGripperToPointNode(Node):
                 self._save_grconv_outputs(
                     crop_nav_image, q_out, depth_out, tag=tag,
                 )
+                # Realsense head cam depth (mm uint16) 를 gt_depth 로 함께 저장.
+                # pred_depth (DA 예측) 와의 비교용 ground-truth.
+                try:
+                    with self.latest_realsense_depth_lock:
+                        rs_depth_msg = self.latest_realsense_depth
+                    if rs_depth_msg is None:
+                        self.get_logger().warning(
+                            f"[{tag}] No realsense head cam depth available; "
+                            f"skip gt_depth save"
+                        )
+                    else:
+                        gt_depth = utils.get_depth_image_from_msg(
+                            rs_depth_msg, self.cv_bridge,
+                            measurement_max=3.0, measurement_min=0.3,
+                        )
+                        os.makedirs(GRCONV_OUTPUT_DIR, exist_ok=True)
+                        gt_ts = time.strftime("%Y%m%d_%H%M%S")
+                        gt_prefix = f"{gt_ts}_{tag}"
+                        # Raw uint16 (mm).
+                        cv2.imwrite(
+                            os.path.join(
+                                GRCONV_OUTPUT_DIR, f"{gt_prefix}_gt_depth.png"
+                            ),
+                            gt_depth,
+                        )
+                        # 시각화용 colormap.
+                        gt_colormap = cv2.applyColorMap(
+                            cv2.normalize(
+                                gt_depth, None, 0, 255, cv2.NORM_MINMAX
+                            ).astype(np.uint8),
+                            cv2.COLORMAP_JET,
+                        )
+                        cv2.imwrite(
+                            os.path.join(
+                                GRCONV_OUTPUT_DIR,
+                                f"{gt_prefix}_gt_depth_colormap.png",
+                            ),
+                            gt_colormap,
+                        )
+                        self.get_logger().info(
+                            f"[{tag}] gt_depth saved to "
+                            f"{GRCONV_OUTPUT_DIR}/{gt_prefix}_gt_depth*.png"
+                        )
+                except Exception:
+                    self.get_logger().error(traceback.format_exc())
                 # 최고 q 위치 로그 (디버깅 / 후속 GRASP 연결 준비).
                 peak_idx = int(np.argmax(q_out))
                 pr, pc = divmod(peak_idx, q_out.shape[1])

@@ -209,11 +209,24 @@ class MoveBaseToPointNode(Node):
                 except Exception:
                     self.get_logger().debug(traceback.format_exc())
 
+        # 액션 종료 시 모든 마커를 hide 한 final feedback 을 한 번 발행.
+        # marker_state / publish_feedback 가 아직 정의되기 전에 호출될 수도
+        # 있어 (예: 카메라 이미지 미수신으로 즉시 error 반환), 존재 여부 가드.
+        def hide_markers_and_publish_final_feedback() -> None:
+            try:
+                marker_state["show_click"] = False
+                marker_state["show_base_goal"] = False
+                publish_feedback()
+            except (NameError, UnboundLocalError):
+                # marker_state / publish_feedback 아직 미정의 — 무시.
+                pass
+
         def action_error_callback(
             error_msg: str = "Goal failed",
             status: int = MoveBaseToPoint.Result.STATUS_FAILURE,
         ) -> MoveBaseToPoint.Result:
             self.get_logger().error(error_msg)
+            hide_markers_and_publish_final_feedback()
             goal_handle.abort()
             cleanup()
             return MoveBaseToPoint.Result(status=status)
@@ -222,6 +235,7 @@ class MoveBaseToPointNode(Node):
             success_msg: str = "Goal succeeded",
         ) -> MoveBaseToPoint.Result:
             self.get_logger().info(success_msg)
+            hide_markers_and_publish_final_feedback()
             goal_handle.succeed()
             cleanup()
             return MoveBaseToPoint.Result(status=MoveBaseToPoint.Result.STATUS_SUCCESS)
@@ -230,6 +244,7 @@ class MoveBaseToPointNode(Node):
             cancel_msg: str = "Goal canceled",
         ) -> MoveBaseToPoint.Result:
             self.get_logger().info(cancel_msg)
+            hide_markers_and_publish_final_feedback()
             goal_handle.canceled()
             cleanup()
             return MoveBaseToPoint.Result(

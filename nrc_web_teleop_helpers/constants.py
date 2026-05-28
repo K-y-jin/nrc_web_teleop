@@ -122,11 +122,11 @@ DEPTH_REF = (695, 300, 1084)  # row, col, depth_mm
 # Move Gripper 액션: 그리퍼로 물체를 조작하기에 적당한 base ↔ 타깃 거리(m).
 # 현재 base ↔ 타깃 거리가 OPTIMAL_DISTANCE 와 BASE_DISTANCE_TOLERANCE 이내면
 # RELOCATE_BASE 를 생략, 그렇지 않으면 OPTIMAL_DISTANCE 가 되도록 base 이동.
-OPTIMAL_DISTANCE = 0.8  # m
+OPTIMAL_DISTANCE = 0.7  # m
 BASE_DISTANCE_TOLERANCE = 0.05  # m
 # Move Base 액션: base 자체를 타깃 근처까지 보낼 때, 충돌 회피용으로
 # 남겨두는 안전 마진(m). raw 거리 - BASE_MARGIN 만큼 전진한다.
-BASE_MARGIN = 0.35  # m
+BASE_MARGIN = 0.1  # m
 
 # Ground 판정 — DEPTH_REF 픽셀에서 클릭 픽셀까지 직선상의 pred_depth가
 # 스무스하게 증가하는지를 판정할 때, 한 스텝의 깊이 변화가 평균 스텝의
@@ -217,6 +217,16 @@ def get_pred_ready_configuration() -> Dict[Joint, float]:
         Joint.WRIST_YAW: 0.7854,  # 45 deg nav 카메라에 안 잡힘.
         Joint.WRIST_PITCH: -0.0,
         Joint.WRIST_ROLL: 0.0,
+    }
+
+
+def get_frontview_configuration() -> Dict[Joint, float]:
+    """
+    Frontview grasp 예측 자세. GRASP_READY 의 base +π/2 회전과 함께 적용해
+    그리퍼가 nav 카메라 정면을 향하도록 한다.
+    """
+    return {
+        Joint.WRIST_YAW: 0.0,  # 90 deg
     }
 
 

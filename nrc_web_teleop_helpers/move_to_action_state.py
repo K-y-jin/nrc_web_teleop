@@ -14,6 +14,7 @@ from geometry_msgs.msg import Point, Quaternion, PoseStamped
 from .constants import (
     Joint,
     get_pred_ready_configuration,
+    get_frontview_configuration,
 )
 from .stretch_ik_control import (
     MotionGeneratorRetval,
@@ -246,6 +247,10 @@ class MoveToActionState(Enum):
                     )
                 }
             )
+            # GRASP_READY 진입 시 그리퍼가 nav 카메라 정면을 향하도록
+            # frontview 자세(WRIST_YAW) 를 함께 적용.
+            if self == MoveToActionState.GRASP_READY:
+                joint_position_overrides.update(get_frontview_configuration())
             return controller.rotate_base_to_goal_pose(
                 goal=rotation_pose,
                 articulated_joints=joints_for_velocity_control,

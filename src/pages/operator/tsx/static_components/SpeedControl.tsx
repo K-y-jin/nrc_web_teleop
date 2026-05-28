@@ -31,11 +31,11 @@ export const VELOCITY_SCALE: VelocityDetails[] = [
 **/
 /** Revised Settings **/
 export const VELOCITY_SCALE: VelocityDetails[] = [
-    { label: "Slowest", scale: 1.6 },
-    { label: "Slow", scale: 3.2 },
-    { label: "Medium", scale: 5.0 },
-    { label: "Fast", scale: 6.4 },
-    { label: "Fastest", scale: 10.0 },
+    { label: "Slowest", scale: 0.8 },
+    { label: "Slow", scale: 1.6 },
+    { label: "Medium", scale: 3.2 },
+    { label: "Fast", scale: 4.8 },
+    { label: "Fastest", scale: 5.6 },
 ];
 
 /**The speed the interface should initialize with */
