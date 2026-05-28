@@ -355,14 +355,20 @@ export class Robot extends React.Component {
             "Show Tablet succeeded!",
             "Show Tablet failed!"
         );
-        this.subscribeToActionFeedback(moveToPregraspActionName, null);
+        this.subscribeToActionFeedback(
+            moveToPregraspActionName,
+            null,
+            "nrc_web_teleop/action/MoveToPregrasp_FeedbackMessage"
+        );
         this.subscribeToActionFeedback(
             moveBaseToPointActionName,
-            this.moveBaseToPointFeedbackCallback
+            this.moveBaseToPointFeedbackCallback,
+            "nrc_web_teleop/action/MoveBaseToPoint_FeedbackMessage"
         );
         this.subscribeToActionFeedback(
             moveGripperToPointActionName,
-            this.moveGripperToPointFeedbackCallback
+            this.moveGripperToPointFeedbackCallback,
+            "nrc_web_teleop/action/MoveGripperToPoint_FeedbackMessage"
         );
         this.createTrajectoryClient();
         this.createMoveBaseClient();
@@ -647,12 +653,21 @@ export class Robot extends React.Component {
     /**이유는 모르겠지만 status와 동일한 방식으로는 피드백 구독 안 됨 */
     subscribeToActionFeedback(
         actionName: string,
-        callback: (feedback: any) => void
+        callback: ((feedback: any) => void) | null,
+        feedbackMessageType?: string
     ) {
+        // ROS2 action feedback 토픽의 정식 메시지 타입은
+        // <package>/action/<ActionName>_FeedbackMessage (wrapper, goal_id +
+        // 실제 feedback 포함). 이를 주지 않고 옛 코드처럼 "<actionName>_Feedback"
+        // 같은 임의 문자열을 messageType 으로 넘기면 rosbridge_server 가
+        // 잘못된 schema 로 직렬화해 일부 필드가 누락된다 (실제로
+        // move_gripper_to_point 에서 새 필드들이 누락되는 문제가 발생).
+        const messageType =
+            feedbackMessageType ?? actionName + "_Feedback";
         const actionFeedbackTopic: ROSLIB.Topic = new ROSLIB.Topic({
             ros: this.ros,
             name: actionName + "/_action/feedback",
-            messageType: actionName + "_Feedback",
+            messageType: messageType,
         });
         this.subscriptions.push(actionFeedbackTopic);
 
@@ -1399,18 +1414,9 @@ export class Robot extends React.Component {
                     message.response_type === "feedback"
                 ) {
                     if (this.moveBaseToPointFeedbackCallback) {
-                        this.moveBaseToPointFeedbackCallback({
-                            new_scaled_u: message.values.feedback.new_scaled_u,
-                            new_scaled_v: message.values.feedback.new_scaled_v,
-                            show_click_marker:
-                                message.values.feedback.show_click_marker,
-                            new_stop_scaled_u:
-                                message.values.feedback.new_stop_scaled_u,
-                            new_stop_scaled_v:
-                                message.values.feedback.new_stop_scaled_v,
-                            show_stop_marker:
-                                message.values.feedback.show_stop_marker,
-                        });
+                        this.moveBaseToPointFeedbackCallback(
+                            message.values.feedback as MoveBaseToPointActionFeedback
+                        );
                     }
                 }
             }
@@ -1445,10 +1451,9 @@ export class Robot extends React.Component {
                     message.response_type === "feedback"
                 ) {
                     if (this.moveGripperToPointFeedbackCallback) {
-                        this.moveGripperToPointFeedbackCallback({
-                            new_scaled_u: message.values.feedback.new_scaled_u,
-                            new_scaled_v: message.values.feedback.new_scaled_v,
-                        });
+                        this.moveGripperToPointFeedbackCallback(
+                            message.values.feedback as MoveGripperToPointActionFeedback
+                        );
                     }
                 }
             }

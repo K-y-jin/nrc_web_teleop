@@ -1,0 +1,224 @@
+[0.000000] (-) TimerEvent: {}
+[0.000312] (nrc_web_teleop) JobQueued: {'identifier': 'nrc_web_teleop', 'dependencies': OrderedDict()}
+[0.000335] (nrc_web_teleop) JobStarted: {'identifier': 'nrc_web_teleop'}
+[0.006338] (nrc_web_teleop) JobProgress: {'identifier': 'nrc_web_teleop', 'progress': 'cmake'}
+[0.006490] (nrc_web_teleop) Command: {'cmd': ['/usr/bin/cmake', '/root/ament_ws/src/nrc_web_teleop', '-DAMENT_CMAKE_SYMLINK_INSTALL=1', '-DCMAKE_INSTALL_PREFIX=/root/ament_ws/src/nrc_web_teleop/install/nrc_web_teleop'], 'cwd': '/root/ament_ws/src/nrc_web_teleop/build/nrc_web_teleop', 'env': OrderedDict([('HELLO_FLEET_ID', 'stretch-se3-local'), ('PYTHONWARNINGS', 'ignore:setup.py install is deprecated,ignore:Invalid dash-separated options,ignore:pkg_resources is deprecated as an API,ignore:Usage of dash-separated'), ('HOSTNAME', 'nrc-X870'), ('HELLO_FLEET_PATH', '/root/stretch_user'), ('SHLVL', '1'), ('LD_LIBRARY_PATH', '/root/ament_ws/install/tf2_web_republisher/lib:/root/ament_ws/install/stretch_web_teleop/lib:/root/ament_ws/install/speech_recognition_msgs/lib:/root/ament_ws/install/sound_play_msgs/lib:/root/ament_ws/install/rosbridge_test_msgs/lib:/root/ament_ws/install/nrc_web_teleop/lib:/root/ament_ws/install/rosbridge_msgs/lib:/root/ament_ws/install/rosapi_msgs/lib:/root/ament_ws/install/realsense2_camera/lib:/root/ament_ws/install/realsense2_camera_msgs/lib:/root/ament_ws/install/audio_play/lib:/root/ament_ws/install/audio_capture/lib:/root/ament_ws/install/audio_common_msgs/lib:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib'), ('HOME', '/root'), ('OLDPWD', '/root/ament_ws'), ('NVM_BIN', '/root/.nvm/versions/node/v22.17.1/bin'), ('NVM_INC', '/root/.nvm/versions/node/v22.17.1/include/node'), ('ROS_PYTHON_VERSION', '3'), ('NVM_DIR', '/root/.nvm'), ('_colcon_cd_root', '/root/ament_ws'), ('COLCON_PREFIX_PATH', '/root/ament_ws/install'), ('ROS_DISTRO', 'humble'), ('_', '/usr/bin/colcon'), ('ROS_VERSION', '2'), ('NVIDIA_DRIVER_CAPABILITIES', 'all'), ('TERM', 'xterm'), ('ROS_LOCALHOST_ONLY', '0'), ('PATH', '/root/ament_ws/install/audio_play/bin:/root/ament_ws/install/audio_capture/bin:/opt/ros/humble/bin:/root/.nvm/versions/node/v22.17.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin'), ('DISPLAY', ':20'), ('LANG', 'C.UTF-8'), ('LS_COLORS', 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:'), ('AMENT_PREFIX_PATH', '/root/ament_ws/install/tf2_web_republisher_py:/root/ament_ws/install/tf2_web_republisher:/root/ament_ws/install/stretch_web_teleop:/root/ament_ws/install/stretch_simulation:/root/ament_ws/install/stretch_rtabmap:/root/ament_ws/install/stretch_ros_tutorials:/root/ament_ws/install/stretch_nav2:/root/ament_ws/install/stretch_funmap:/root/ament_ws/install/stretch_calibration:/root/ament_ws/install/stretch_description:/root/ament_ws/install/stretch_demos:/root/ament_ws/install/stretch_deep_perception:/root/ament_ws/install/stretch_core:/root/ament_ws/install/respeaker_ros2:/root/ament_ws/install/speech_recognition_msgs:/root/ament_ws/install/sound_play_msgs:/root/ament_ws/install/audio_common:/root/ament_ws/install/sound_play:/root/ament_ws/install/sllidar_ros2:/root/ament_ws/install/rosbridge_test_msgs:/root/ament_ws/install/rosbridge_suite:/root/ament_ws/install/nrc_web_teleop:/root/ament_ws/install/rosbridge_server:/root/ament_ws/install/rosbridge_msgs:/root/ament_ws/install/rosapi:/root/ament_ws/install/rosbridge_library:/root/ament_ws/install/rosapi_msgs:/root/ament_ws/install/ros2_numpy:/root/ament_ws/install/realsense2_description:/root/ament_ws/install/realsense2_camera:/root/ament_ws/install/realsense2_camera_msgs:/root/ament_ws/install/hello_helpers:/root/ament_ws/install/audio_play:/root/ament_ws/install/audio_capture:/root/ament_ws/install/audio_common_msgs:/opt/ros/humble'), ('LRS_LOG_LEVEL', 'None'), ('PWD', '/root/ament_ws/src/nrc_web_teleop/build/nrc_web_teleop'), ('LC_ALL', 'C.UTF-8'), ('NVM_CD_FLAGS', ''), ('PYTHONPATH', '/root/ament_ws/build/tf2_web_republisher_py:/root/ament_ws/install/tf2_web_republisher_py/lib/python3.10/site-packages:/root/ament_ws/install/tf2_web_republisher/local/lib/python3.10/dist-packages:/root/ament_ws/install/stretch_web_teleop/local/lib/python3.10/dist-packages:/root/ament_ws/build/stretch_simulation:/root/ament_ws/install/stretch_simulation/lib/python3.10/site-packages:/root/ament_ws/build/stretch_ros_tutorials:/root/ament_ws/install/stretch_ros_tutorials/lib/python3.10/site-packages:/root/ament_ws/install/stretch_nav2/local/lib/python3.10/dist-packages:/root/ament_ws/build/stretch_funmap:/root/ament_ws/install/stretch_funmap/lib/python3.10/site-packages:/root/ament_ws/build/stretch_calibration:/root/ament_ws/install/stretch_calibration/lib/python3.10/site-packages:/root/ament_ws/build/stretch_demos:/root/ament_ws/install/stretch_demos/lib/python3.10/site-packages:/root/ament_ws/build/stretch_deep_perception:/root/ament_ws/install/stretch_deep_perception/lib/python3.10/site-packages:/root/ament_ws/build/stretch_core:/root/ament_ws/install/stretch_core/lib/python3.10/site-packages:/root/ament_ws/build/respeaker_ros2:/root/ament_ws/install/respeaker_ros2/lib/python3.10/site-packages:/root/ament_ws/install/speech_recognition_msgs/local/lib/python3.10/dist-packages:/root/ament_ws/install/sound_play_msgs/local/lib/python3.10/dist-packages:/root/ament_ws/install/sound_play/local/lib/python3.10/dist-packages:/root/ament_ws/install/rosbridge_test_msgs/local/lib/python3.10/dist-packages:/root/ament_ws/install/nrc_web_teleop/local/lib/python3.10/dist-packages:/root/ament_ws/install/rosbridge_server/local/lib/python3.10/dist-packages:/root/ament_ws/install/rosbridge_msgs/local/lib/python3.10/dist-packages:/root/ament_ws/install/rosapi/local/lib/python3.10/dist-packages:/root/ament_ws/install/rosbridge_library/local/lib/python3.10/dist-packages:/root/ament_ws/install/rosapi_msgs/local/lib/python3.10/dist-packages:/root/ament_ws/install/ros2_numpy/local/lib/python3.10/dist-packages:/root/ament_ws/install/realsense2_camera_msgs/local/lib/python3.10/dist-packages:/root/ament_ws/build/hello_helpers/src:/root/ament_ws/install/hello_helpers/lib/python3.10/site-packages:/root/ament_ws/install/audio_common_msgs/local/lib/python3.10/dist-packages:/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('COLCON', '1'), ('CMAKE_PREFIX_PATH', '/root/ament_ws/install/tf2_web_republisher:/root/ament_ws/install/stretch_web_teleop:/root/ament_ws/install/stretch_rtabmap:/root/ament_ws/install/stretch_nav2:/root/ament_ws/install/stretch_description:/root/ament_ws/install/speech_recognition_msgs:/root/ament_ws/install/sound_play_msgs:/root/ament_ws/install/audio_common:/root/ament_ws/install/sound_play:/root/ament_ws/install/sllidar_ros2:/root/ament_ws/install/rosbridge_test_msgs:/root/ament_ws/install/rosbridge_suite:/root/ament_ws/install/nrc_web_teleop:/root/ament_ws/install/rosbridge_server:/root/ament_ws/install/rosbridge_msgs:/root/ament_ws/install/rosapi:/root/ament_ws/install/rosbridge_library:/root/ament_ws/install/rosapi_msgs:/root/ament_ws/install/ros2_numpy:/root/ament_ws/install/realsense2_description:/root/ament_ws/install/realsense2_camera:/root/ament_ws/install/realsense2_camera_msgs:/root/ament_ws/install/audio_play:/root/ament_ws/install/audio_capture:/root/ament_ws/install/audio_common_msgs:/root/ament_ws/install/tf2_web_republisher_py:/root/ament_ws/install/stretch_simulation:/root/ament_ws/install/stretch_ros_tutorials:/root/ament_ws/install/stretch_funmap:/root/ament_ws/install/stretch_calibration:/root/ament_ws/install/stretch_demos:/root/ament_ws/install/stretch_deep_perception:/root/ament_ws/install/stretch_core:/root/ament_ws/install/respeaker_ros2:/root/ament_ws/install/hello_helpers:/opt/ros/humble')]), 'shell': False}
+[0.071823] (nrc_web_teleop) StdoutLine: {'line': b'-- The C compiler identification is GNU 11.4.0\n'}
+[0.098887] (nrc_web_teleop) StdoutLine: {'line': b'-- The CXX compiler identification is GNU 11.4.0\n'}
+[0.099879] (-) TimerEvent: {}
+[0.102901] (nrc_web_teleop) StdoutLine: {'line': b'-- Detecting C compiler ABI info\n'}
+[0.134491] (nrc_web_teleop) StdoutLine: {'line': b'-- Detecting C compiler ABI info - done\n'}
+[0.137442] (nrc_web_teleop) StdoutLine: {'line': b'-- Check for working C compiler: /usr/bin/cc - skipped\n'}
+[0.137934] (nrc_web_teleop) StdoutLine: {'line': b'-- Detecting C compile features\n'}
+[0.138186] (nrc_web_teleop) StdoutLine: {'line': b'-- Detecting C compile features - done\n'}
+[0.139580] (nrc_web_teleop) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info\n'}
+[0.174464] (nrc_web_teleop) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info - done\n'}
+[0.177896] (nrc_web_teleop) StdoutLine: {'line': b'-- Check for working CXX compiler: /usr/bin/c++ - skipped\n'}
+[0.178029] (nrc_web_teleop) StdoutLine: {'line': b'-- Detecting CXX compile features\n'}
+[0.178252] (nrc_web_teleop) StdoutLine: {'line': b'-- Detecting CXX compile features - done\n'}
+[0.184483] (nrc_web_teleop) StdoutLine: {'line': b'-- Found ament_cmake: 1.3.11 (/opt/ros/humble/share/ament_cmake/cmake)\n'}
+[0.199942] (-) TimerEvent: {}
+[0.300107] (-) TimerEvent: {}
+[0.326862] (nrc_web_teleop) StdoutLine: {'line': b'-- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter \n'}
+[0.368246] (nrc_web_teleop) StdoutLine: {'line': b'-- Override CMake install command with custom implementation using symlinks instead of copying resources\n'}
+[0.400166] (-) TimerEvent: {}
+[0.423320] (nrc_web_teleop) StdoutLine: {'line': b'-- Found geometry_msgs: 4.9.0 (/opt/ros/humble/share/geometry_msgs/cmake)\n'}
+[0.469948] (nrc_web_teleop) StdoutLine: {'line': b'-- Found rosidl_generator_c: 3.1.6 (/opt/ros/humble/share/rosidl_generator_c/cmake)\n'}
+[0.477976] (nrc_web_teleop) StdoutLine: {'line': b'-- Found rosidl_adapter: 3.1.6 (/opt/ros/humble/share/rosidl_adapter/cmake)\n'}
+[0.487496] (nrc_web_teleop) StdoutLine: {'line': b'-- Found rosidl_generator_cpp: 3.1.6 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)\n'}
+[0.499173] (nrc_web_teleop) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c\n'}
+[0.500223] (-) TimerEvent: {}
+[0.515363] (nrc_web_teleop) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp\n'}
+[0.538312] (nrc_web_teleop) StdoutLine: {'line': b'-- Found rosbridge_server: 1.3.2 (/root/ament_ws/install/rosbridge_server/share/rosbridge_server/cmake)\n'}
+[0.541914] (nrc_web_teleop) StdoutLine: {'line': b'-- Found rosidl_default_generators: 1.2.0 (/opt/ros/humble/share/rosidl_default_generators/cmake)\n'}
+[0.600306] (-) TimerEvent: {}
+[0.700523] (-) TimerEvent: {}
+[0.790102] (nrc_web_teleop) StdoutLine: {'line': b'-- Found ament_cmake_ros: 0.10.0 (/opt/ros/humble/share/ament_cmake_ros/cmake)\n'}
+[0.800601] (-) TimerEvent: {}
+[0.900823] (-) TimerEvent: {}
+[1.001059] (-) TimerEvent: {}
+[1.101258] (-) TimerEvent: {}
+[1.103239] (nrc_web_teleop) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c\n'}
+[1.201333] (-) TimerEvent: {}
+[1.224160] (nrc_web_teleop) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp\n'}
+[1.245398] (nrc_web_teleop) StdoutLine: {'line': b'-- Found PythonInterp: /usr/bin/python3 (found suitable version "3.10.12", minimum required is "3.6") \n'}
+[1.252484] (nrc_web_teleop) StdoutLine: {'line': b'-- Found python_cmake_module: 0.10.0 (/opt/ros/humble/share/python_cmake_module/cmake)\n'}
+[1.278436] (nrc_web_teleop) StdoutLine: {'line': b'-- Found PythonLibs: /usr/lib/x86_64-linux-gnu/libpython3.10.so (found suitable version "3.10.12", minimum required is "3.5") \n'}
+[1.278575] (nrc_web_teleop) StdoutLine: {'line': b'-- Using PYTHON_EXECUTABLE: /usr/bin/python3\n'}
+[1.278613] (nrc_web_teleop) StdoutLine: {'line': b'-- Using PYTHON_INCLUDE_DIRS: /usr/include/python3.10\n'}
+[1.278644] (nrc_web_teleop) StdoutLine: {'line': b'-- Using PYTHON_LIBRARIES: /usr/lib/x86_64-linux-gnu/libpython3.10.so\n'}
+[1.299336] (nrc_web_teleop) StdoutLine: {'line': b'-- Found PythonExtra: .so  \n'}
+[1.301395] (-) TimerEvent: {}
+[1.357435] (nrc_web_teleop) StdoutLine: {'line': b'-- Configuring done\n'}
+[1.375478] (nrc_web_teleop) StdoutLine: {'line': b'-- Generating done\n'}
+[1.380843] (nrc_web_teleop) StdoutLine: {'line': b'-- Build files have been written to: /root/ament_ws/src/nrc_web_teleop/build/nrc_web_teleop\n'}
+[1.385696] (nrc_web_teleop) CommandEnded: {'returncode': 0}
+[1.386013] (nrc_web_teleop) JobProgress: {'identifier': 'nrc_web_teleop', 'progress': 'build'}
+[1.386448] (nrc_web_teleop) Command: {'cmd': ['/usr/bin/cmake', '--build', '/root/ament_ws/src/nrc_web_teleop/build/nrc_web_teleop', '--', '-j16', '-l16'], 'cwd': '/root/ament_ws/src/nrc_web_teleop/build/nrc_web_teleop', 'env': OrderedDict([('HELLO_FLEET_ID', 'stretch-se3-local'), ('PYTHONWARNINGS', 'ignore:setup.py install is deprecated,ignore:Invalid dash-separated options,ignore:pkg_resources is deprecated as an API,ignore:Usage of dash-separated'), ('HOSTNAME', 'nrc-X870'), ('HELLO_FLEET_PATH', '/root/stretch_user'), ('SHLVL', '1'), ('LD_LIBRARY_PATH', '/root/ament_ws/install/tf2_web_republisher/lib:/root/ament_ws/install/stretch_web_teleop/lib:/root/ament_ws/install/speech_recognition_msgs/lib:/root/ament_ws/install/sound_play_msgs/lib:/root/ament_ws/install/rosbridge_test_msgs/lib:/root/ament_ws/install/nrc_web_teleop/lib:/root/ament_ws/install/rosbridge_msgs/lib:/root/ament_ws/install/rosapi_msgs/lib:/root/ament_ws/install/realsense2_camera/lib:/root/ament_ws/install/realsense2_camera_msgs/lib:/root/ament_ws/install/audio_play/lib:/root/ament_ws/install/audio_capture/lib:/root/ament_ws/install/audio_common_msgs/lib:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib'), ('HOME', '/root'), ('OLDPWD', '/root/ament_ws'), ('NVM_BIN', '/root/.nvm/versions/node/v22.17.1/bin'), ('NVM_INC', '/root/.nvm/versions/node/v22.17.1/include/node'), ('ROS_PYTHON_VERSION', '3'), ('NVM_DIR', '/root/.nvm'), ('_colcon_cd_root', '/root/ament_ws'), ('COLCON_PREFIX_PATH', '/root/ament_ws/install'), ('ROS_DISTRO', 'humble'), ('_', '/usr/bin/colcon'), ('ROS_VERSION', '2'), ('NVIDIA_DRIVER_CAPABILITIES', 'all'), ('TERM', 'xterm'), ('ROS_LOCALHOST_ONLY', '0'), ('PATH', '/root/ament_ws/install/audio_play/bin:/root/ament_ws/install/audio_capture/bin:/opt/ros/humble/bin:/root/.nvm/versions/node/v22.17.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin'), ('DISPLAY', ':20'), ('LANG', 'C.UTF-8'), ('LS_COLORS', 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:'), ('AMENT_PREFIX_PATH', '/root/ament_ws/install/tf2_web_republisher_py:/root/ament_ws/install/tf2_web_republisher:/root/ament_ws/install/stretch_web_teleop:/root/ament_ws/install/stretch_simulation:/root/ament_ws/install/stretch_rtabmap:/root/ament_ws/install/stretch_ros_tutorials:/root/ament_ws/install/stretch_nav2:/root/ament_ws/install/stretch_funmap:/root/ament_ws/install/stretch_calibration:/root/ament_ws/install/stretch_description:/root/ament_ws/install/stretch_demos:/root/ament_ws/install/stretch_deep_perception:/root/ament_ws/install/stretch_core:/root/ament_ws/install/respeaker_ros2:/root/ament_ws/install/speech_recognition_msgs:/root/ament_ws/install/sound_play_msgs:/root/ament_ws/install/audio_common:/root/ament_ws/install/sound_play:/root/ament_ws/install/sllidar_ros2:/root/ament_ws/install/rosbridge_test_msgs:/root/ament_ws/install/rosbridge_suite:/root/ament_ws/install/nrc_web_teleop:/root/ament_ws/install/rosbridge_server:/root/ament_ws/install/rosbridge_msgs:/root/ament_ws/install/rosapi:/root/ament_ws/install/rosbridge_library:/root/ament_ws/install/rosapi_msgs:/root/ament_ws/install/ros2_numpy:/root/ament_ws/install/realsense2_description:/root/ament_ws/install/realsense2_camera:/root/ament_ws/install/realsense2_camera_msgs:/root/ament_ws/install/hello_helpers:/root/ament_ws/install/audio_play:/root/ament_ws/install/audio_capture:/root/ament_ws/install/audio_common_msgs:/opt/ros/humble'), ('LRS_LOG_LEVEL', 'None'), ('PWD', '/root/ament_ws/src/nrc_web_teleop/build/nrc_web_teleop'), ('LC_ALL', 'C.UTF-8'), ('NVM_CD_FLAGS', ''), ('PYTHONPATH', '/root/ament_ws/build/tf2_web_republisher_py:/root/ament_ws/install/tf2_web_republisher_py/lib/python3.10/site-packages:/root/ament_ws/install/tf2_web_republisher/local/lib/python3.10/dist-packages:/root/ament_ws/install/stretch_web_teleop/local/lib/python3.10/dist-packages:/root/ament_ws/build/stretch_simulation:/root/ament_ws/install/stretch_simulation/lib/python3.10/site-packages:/root/ament_ws/build/stretch_ros_tutorials:/root/ament_ws/install/stretch_ros_tutorials/lib/python3.10/site-packages:/root/ament_ws/install/stretch_nav2/local/lib/python3.10/dist-packages:/root/ament_ws/build/stretch_funmap:/root/ament_ws/install/stretch_funmap/lib/python3.10/site-packages:/root/ament_ws/build/stretch_calibration:/root/ament_ws/install/stretch_calibration/lib/python3.10/site-packages:/root/ament_ws/build/stretch_demos:/root/ament_ws/install/stretch_demos/lib/python3.10/site-packages:/root/ament_ws/build/stretch_deep_perception:/root/ament_ws/install/stretch_deep_perception/lib/python3.10/site-packages:/root/ament_ws/build/stretch_core:/root/ament_ws/install/stretch_core/lib/python3.10/site-packages:/root/ament_ws/build/respeaker_ros2:/root/ament_ws/install/respeaker_ros2/lib/python3.10/site-packages:/root/ament_ws/install/speech_recognition_msgs/local/lib/python3.10/dist-packages:/root/ament_ws/install/sound_play_msgs/local/lib/python3.10/dist-packages:/root/ament_ws/install/sound_play/local/lib/python3.10/dist-packages:/root/ament_ws/install/rosbridge_test_msgs/local/lib/python3.10/dist-packages:/root/ament_ws/install/nrc_web_teleop/local/lib/python3.10/dist-packages:/root/ament_ws/install/rosbridge_server/local/lib/python3.10/dist-packages:/root/ament_ws/install/rosbridge_msgs/local/lib/python3.10/dist-packages:/root/ament_ws/install/rosapi/local/lib/python3.10/dist-packages:/root/ament_ws/install/rosbridge_library/local/lib/python3.10/dist-packages:/root/ament_ws/install/rosapi_msgs/local/lib/python3.10/dist-packages:/root/ament_ws/install/ros2_numpy/local/lib/python3.10/dist-packages:/root/ament_ws/install/realsense2_camera_msgs/local/lib/python3.10/dist-packages:/root/ament_ws/build/hello_helpers/src:/root/ament_ws/install/hello_helpers/lib/python3.10/site-packages:/root/ament_ws/install/audio_common_msgs/local/lib/python3.10/dist-packages:/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('COLCON', '1'), ('CMAKE_PREFIX_PATH', '/root/ament_ws/install/tf2_web_republisher:/root/ament_ws/install/stretch_web_teleop:/root/ament_ws/install/stretch_rtabmap:/root/ament_ws/install/stretch_nav2:/root/ament_ws/install/stretch_description:/root/ament_ws/install/speech_recognition_msgs:/root/ament_ws/install/sound_play_msgs:/root/ament_ws/install/audio_common:/root/ament_ws/install/sound_play:/root/ament_ws/install/sllidar_ros2:/root/ament_ws/install/rosbridge_test_msgs:/root/ament_ws/install/rosbridge_suite:/root/ament_ws/install/nrc_web_teleop:/root/ament_ws/install/rosbridge_server:/root/ament_ws/install/rosbridge_msgs:/root/ament_ws/install/rosapi:/root/ament_ws/install/rosbridge_library:/root/ament_ws/install/rosapi_msgs:/root/ament_ws/install/ros2_numpy:/root/ament_ws/install/realsense2_description:/root/ament_ws/install/realsense2_camera:/root/ament_ws/install/realsense2_camera_msgs:/root/ament_ws/install/audio_play:/root/ament_ws/install/audio_capture:/root/ament_ws/install/audio_common_msgs:/root/ament_ws/install/tf2_web_republisher_py:/root/ament_ws/install/stretch_simulation:/root/ament_ws/install/stretch_ros_tutorials:/root/ament_ws/install/stretch_funmap:/root/ament_ws/install/stretch_calibration:/root/ament_ws/install/stretch_demos:/root/ament_ws/install/stretch_deep_perception:/root/ament_ws/install/stretch_core:/root/ament_ws/install/respeaker_ros2:/root/ament_ws/install/hello_helpers:/opt/ros/humble')]), 'shell': False}
+[1.401436] (-) TimerEvent: {}
+[1.406586] (nrc_web_teleop) StdoutLine: {'line': b'[  1%] \x1b[34m\x1b[1mGenerating C code for ROS interfaces\x1b[0m\n'}
+[1.410651] (nrc_web_teleop) StdoutLine: {'line': b'[  3%] \x1b[34m\x1b[1mGenerating C++ code for ROS interfaces\x1b[0m\n'}
+[1.413632] (nrc_web_teleop) StdoutLine: {'line': b'[  3%] Built target ament_cmake_python_symlink_nrc_web_teleop_helpers\n'}
+[1.413695] (nrc_web_teleop) StdoutLine: {'line': b'[  3%] Built target ament_cmake_python_symlink_nrc_web_teleop\n'}
+[1.501536] (-) TimerEvent: {}
+[1.558516] (nrc_web_teleop) StdoutLine: {'line': b'running egg_info\n'}
+[1.558784] (nrc_web_teleop) StdoutLine: {'line': b'running egg_info\n'}
+[1.558892] (nrc_web_teleop) StdoutLine: {'line': b'creating nrc_web_teleop.egg-info\n'}
+[1.558979] (nrc_web_teleop) StdoutLine: {'line': b'creating nrc_web_teleop_helpers.egg-info\n'}
+[1.559074] (nrc_web_teleop) StdoutLine: {'line': b'writing nrc_web_teleop.egg-info/PKG-INFO\n'}
+[1.559149] (nrc_web_teleop) StdoutLine: {'line': b'writing nrc_web_teleop_helpers.egg-info/PKG-INFO\n'}
+[1.559215] (nrc_web_teleop) StdoutLine: {'line': b'writing dependency_links to nrc_web_teleop_helpers.egg-info/dependency_links.txt\n'}
+[1.559266] (nrc_web_teleop) StdoutLine: {'line': b'writing dependency_links to nrc_web_teleop.egg-info/dependency_links.txt\n'}
+[1.559296] (nrc_web_teleop) StdoutLine: {'line': b'writing top-level names to nrc_web_teleop_helpers.egg-info/top_level.txt\n'}
+[1.559331] (nrc_web_teleop) StdoutLine: {'line': b'writing top-level names to nrc_web_teleop.egg-info/top_level.txt\n'}
+[1.559359] (nrc_web_teleop) StdoutLine: {'line': b"writing manifest file 'nrc_web_teleop.egg-info/SOURCES.txt'\n"}
+[1.559385] (nrc_web_teleop) StdoutLine: {'line': b"writing manifest file 'nrc_web_teleop_helpers.egg-info/SOURCES.txt'\n"}
+[1.560648] (nrc_web_teleop) StdoutLine: {'line': b"reading manifest file 'nrc_web_teleop.egg-info/SOURCES.txt'\n"}
+[1.560856] (nrc_web_teleop) StdoutLine: {'line': b"writing manifest file 'nrc_web_teleop.egg-info/SOURCES.txt'\n"}
+[1.560927] (nrc_web_teleop) StdoutLine: {'line': b"reading manifest file 'nrc_web_teleop_helpers.egg-info/SOURCES.txt'\n"}
+[1.561239] (nrc_web_teleop) StdoutLine: {'line': b"writing manifest file 'nrc_web_teleop_helpers.egg-info/SOURCES.txt'\n"}
+[1.575130] (nrc_web_teleop) StdoutLine: {'line': b'[  3%] Built target ament_cmake_python_build_nrc_web_teleop_helpers_egg\n'}
+[1.575185] (nrc_web_teleop) StdoutLine: {'line': b'[  3%] Built target ament_cmake_python_build_nrc_web_teleop_egg\n'}
+[1.601589] (-) TimerEvent: {}
+[1.701761] (-) TimerEvent: {}
+[1.745565] (nrc_web_teleop) StderrLine: {'line': b'Traceback (most recent call last):\n'}
+[1.745801] (nrc_web_teleop) StderrLine: {'line': b'Traceback (most recent call last):\n'}
+[1.745826] (nrc_web_teleop) StderrLine: {'line': b'  File "/opt/ros/humble/share/rosidl_generator_c/cmake/../../../lib/rosidl_generator_c/rosidl_generator_c", line 38, in <module>\n'}
+[1.745850] (nrc_web_teleop) StderrLine: {'line': b'  File "/opt/ros/humble/share/rosidl_generator_cpp/cmake/../../../lib/rosidl_generator_cpp/rosidl_generator_cpp", line 38, in <module>\n'}
+[1.745869] (nrc_web_teleop) StderrLine: {'line': b"gmake[2]: *** Deleting file 'rosidl_generator_cpp/nrc_web_teleop/action/move_to_pregrasp.hpp'\n"}
+[1.745890] (nrc_web_teleop) StderrLine: {'line': b"gmake[2]: *** Deleting file 'rosidl_generator_c/nrc_web_teleop/action/move_to_pregrasp.h'\n"}
+[1.745910] (nrc_web_teleop) StderrLine: {'line': b'    sys.exit(main())\n'}
+[1.745929] (nrc_web_teleop) StderrLine: {'line': b'    sys.exit(main())\n'}
+[1.745946] (nrc_web_teleop) StderrLine: {'line': b'  File "/opt/ros/humble/share/rosidl_generator_c/cmake/../../../lib/rosidl_generator_c/rosidl_generator_c", line 34, in main\n'}
+[1.745964] (nrc_web_teleop) StderrLine: {'line': b'  File "/opt/ros/humble/share/rosidl_generator_cpp/cmake/../../../lib/rosidl_generator_cpp/rosidl_generator_cpp", line 34, in main\n'}
+[1.745981] (nrc_web_teleop) StderrLine: {'line': b'    generate_c(args.generator_arguments_file)\n'}
+[1.745998] (nrc_web_teleop) StderrLine: {'line': b'    generate_cpp(args.generator_arguments_file)\n'}
+[1.746015] (nrc_web_teleop) StderrLine: {'line': b'  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_generator_c/__init__.py", line 37, in generate_c\n'}
+[1.746032] (nrc_web_teleop) StderrLine: {'line': b'  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_generator_cpp/__init__.py", line 39, in generate_cpp\n'}
+[1.749030] (nrc_web_teleop) StderrLine: {'line': b'    return generate_files(\n'}
+[1.749103] (nrc_web_teleop) StderrLine: {'line': b'  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 87, in generate_files\n'}
+[1.749124] (nrc_web_teleop) StderrLine: {'line': b'    return generate_files(\n'}
+[1.749142] (nrc_web_teleop) StderrLine: {'line': b'  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 87, in generate_files\n'}
+[1.749204] (nrc_web_teleop) StderrLine: {'line': b'    expand_template(\n'}
+[1.749222] (nrc_web_teleop) StderrLine: {'line': b'    expand_template(\n'}
+[1.749240] (nrc_web_teleop) StderrLine: {'line': b'  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 149, in expand_template\n'}
+[1.749258] (nrc_web_teleop) StderrLine: {'line': b'  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 149, in expand_template\n'}
+[1.749289] (nrc_web_teleop) StderrLine: {'line': b'    interpreter.string(template_content, template_path, locals=data)\n'}
+[1.749305] (nrc_web_teleop) StderrLine: {'line': b'    interpreter.string(template_content, template_path, locals=data)\n'}
+[1.749319] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2391, in string\n'}
+[1.749335] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2391, in string\n'}
+[1.750036] (nrc_web_teleop) StderrLine: {'line': b'    self.safe(scanner, True, locals)\n'}
+[1.750054] (nrc_web_teleop) StderrLine: {'line': b'    self.safe(scanner, True, locals)\n'}
+[1.750070] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2401, in safe\n'}
+[1.750085] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2401, in safe\n'}
+[1.750188] (nrc_web_teleop) StderrLine: {'line': b'    self.parse(scanner, locals)\n'}
+[1.750204] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2421, in parse\n'}
+[1.750219] (nrc_web_teleop) StderrLine: {'line': b'    self.parse(scanner, locals)\n'}
+[1.750234] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2421, in parse\n'}
+[1.750337] (nrc_web_teleop) StderrLine: {'line': b'    token.run(self, locals)\n'}
+[1.750352] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1547, in run\n'}
+[1.750367] (nrc_web_teleop) StderrLine: {'line': b'    token.run(self, locals)\n'}
+[1.750382] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1547, in run\n'}
+[1.750433] (nrc_web_teleop) StderrLine: {'line': b'    self.subrun(info[0][1], interpreter, locals)\n'}
+[1.750457] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1631, in subrun\n'}
+[1.750483] (nrc_web_teleop) StderrLine: {'line': b'    self.subrun(info[0][1], interpreter, locals)\n'}
+[1.750499] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1631, in subrun\n'}
+[1.750535] (nrc_web_teleop) StderrLine: {'line': b'    token.run(interpreter, locals)\n'}
+[1.750553] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1425, in run\n'}
+[1.750578] (nrc_web_teleop) StderrLine: {'line': b'    token.run(interpreter, locals)\n'}
+[1.750595] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1425, in run\n'}
+[1.750623] (nrc_web_teleop) StderrLine: {'line': b'    interpreter.execute(self.code, locals)\n'}
+[1.750641] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2596, in execute\n'}
+[1.750668] (nrc_web_teleop) StderrLine: {'line': b'    interpreter.execute(self.code, locals)\n'}
+[1.750684] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2596, in execute\n'}
+[1.750779] (nrc_web_teleop) StderrLine: {'line': b'    _exec(statements, self.globals, locals)\n'}
+[1.750798] (nrc_web_teleop) StderrLine: {'line': b'  File "<string>", line 2, in <module>\n'}
+[1.750825] (nrc_web_teleop) StderrLine: {'line': b'    _exec(statements, self.globals, locals)\n'}
+[1.750842] (nrc_web_teleop) StderrLine: {'line': b'  File "<string>", line 2, in <module>\n'}
+[1.751298] (nrc_web_teleop) StderrLine: {'line': b'  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 198, in _expand_template\n'}
+[1.751314] (nrc_web_teleop) StderrLine: {'line': b'  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 198, in _expand_template\n'}
+[1.751342] (nrc_web_teleop) StderrLine: {'line': b'    interpreter.string(content, str(template_path), kwargs)\n'}
+[1.751359] (nrc_web_teleop) StderrLine: {'line': b'    interpreter.string(content, str(template_path), kwargs)\n'}
+[1.751374] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2391, in string\n'}
+[1.751391] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2391, in string\n'}
+[1.751481] (nrc_web_teleop) StderrLine: {'line': b'    self.safe(scanner, True, locals)\n'}
+[1.751499] (nrc_web_teleop) StderrLine: {'line': b'    self.safe(scanner, True, locals)\n'}
+[1.751515] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2401, in safe\n'}
+[1.751530] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2401, in safe\n'}
+[1.751622] (nrc_web_teleop) StderrLine: {'line': b'    self.parse(scanner, locals)\n'}
+[1.751646] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2421, in parse\n'}
+[1.751661] (nrc_web_teleop) StderrLine: {'line': b'    self.parse(scanner, locals)\n'}
+[1.751676] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2421, in parse\n'}
+[1.751768] (nrc_web_teleop) StderrLine: {'line': b'    token.run(self, locals)\n'}
+[1.751790] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1527, in run\n'}
+[1.751805] (nrc_web_teleop) StderrLine: {'line': b'    token.run(self, locals)\n'}
+[1.751820] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1425, in run\n'}
+[1.751865] (nrc_web_teleop) StderrLine: {'line': b'    self.subrun(subtokens, interpreter, locals)\n'}
+[1.751881] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1631, in subrun\n'}
+[1.751895] (nrc_web_teleop) StderrLine: {'line': b'    interpreter.execute(self.code, locals)\n'}
+[1.751910] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2596, in execute\n'}
+[1.751963] (nrc_web_teleop) StderrLine: {'line': b'    token.run(interpreter, locals)\n'}
+[1.751979] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1547, in run\n'}
+[1.752024] (nrc_web_teleop) StderrLine: {'line': b'    _exec(statements, self.globals, locals)\n'}
+[1.752039] (nrc_web_teleop) StderrLine: {'line': b'  File "<string>", line 2, in <module>\n'}
+[1.752059] (nrc_web_teleop) StderrLine: {'line': b'    self.subrun(info[0][1], interpreter, locals)\n'}
+[1.752075] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1631, in subrun\n'}
+[1.752118] (nrc_web_teleop) StderrLine: {'line': b'  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 198, in _expand_template\n'}
+[1.752146] (nrc_web_teleop) StderrLine: {'line': b'    interpreter.string(content, str(template_path), kwargs)\n'}
+[1.752163] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2391, in string\n'}
+[1.752186] (nrc_web_teleop) StderrLine: {'line': b'    token.run(interpreter, locals)\n'}
+[1.752201] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1526, in run\n'}
+[1.752250] (nrc_web_teleop) StderrLine: {'line': b'    if interpreter.evaluate(secondary.rest, locals):\n'}
+[1.752265] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2573, in evaluate\n'}
+[1.752289] (nrc_web_teleop) StderrLine: {'line': b'    self.safe(scanner, True, locals)\n'}
+[1.752305] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2401, in safe\n'}
+[1.752403] (nrc_web_teleop) StderrLine: {'line': b'    result = eval(expression, self.globals, locals)\n'}
+[1.752422] (nrc_web_teleop) StderrLine: {'line': b'  File "<string>", line 1, in <module>\n'}
+[1.752449] (nrc_web_teleop) StderrLine: {'line': b'    self.parse(scanner, locals)\n'}
+[1.752473] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2421, in parse\n'}
+[1.752496] (nrc_web_teleop) StderrLine: {'line': b'KeyboardInterrupt\n'}
+[1.752582] (nrc_web_teleop) StderrLine: {'line': b'    token.run(self, locals)\n'}
+[1.752602] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1425, in run\n'}
+[1.752674] (nrc_web_teleop) StderrLine: {'line': b'    interpreter.execute(self.code, locals)\n'}
+[1.752699] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2596, in execute\n'}
+[1.752817] (nrc_web_teleop) StderrLine: {'line': b'    _exec(statements, self.globals, locals)\n'}
+[1.752835] (nrc_web_teleop) StderrLine: {'line': b'  File "<string>", line 2, in <module>\n'}
+[1.752906] (nrc_web_teleop) StderrLine: {'line': b'  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 198, in _expand_template\n'}
+[1.752932] (nrc_web_teleop) StderrLine: {'line': b'    interpreter.string(content, str(template_path), kwargs)\n'}
+[1.752951] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2391, in string\n'}
+[1.753069] (nrc_web_teleop) StderrLine: {'line': b'    self.safe(scanner, True, locals)\n'}
+[1.753086] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2401, in safe\n'}
+[1.753204] (nrc_web_teleop) StderrLine: {'line': b'    self.parse(scanner, locals)\n'}
+[1.753221] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2417, in parse\n'}
+[1.753339] (nrc_web_teleop) StderrLine: {'line': b'    token = scanner.one()\n'}
+[1.753356] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1984, in one\n'}
+[1.753456] (nrc_web_teleop) StderrLine: {'line': b'    token.scan(self)\n'}
+[1.753476] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1311, in scan\n'}
+[1.753532] (nrc_web_teleop) StderrLine: {'line': b"    q = scanner.next('$', 0, z, True)\n"}
+[1.753548] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1826, in next\n'}
+[1.753634] (nrc_web_teleop) StderrLine: {'line': b'    c = self[i]\n'}
+[1.753652] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 1683, in __getitem__\n'}
+[1.753731] (nrc_web_teleop) StderrLine: {'line': b'    if isinstance(index, slice):\n'}
+[1.753748] (nrc_web_teleop) StderrLine: {'line': b'KeyboardInterrupt\n'}
+[1.758566] (nrc_web_teleop) StderrLine: {'line': b'Exception ignored in: <function Interpreter.__del__ at 0x7b9fb39d8550>\n'}
+[1.758589] (nrc_web_teleop) StderrLine: {'line': b'Traceback (most recent call last):\n'}
+[1.758607] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2094, in __del__\n'}
+[1.758636] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2157, in shutdown\n'}
+[1.758653] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2647, in finalize\n'}
+[1.758668] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2200, in push\n'}
+[1.758683] (nrc_web_teleop) StderrLine: {'line': b"AttributeError: '_io.TextIOWrapper' object has no attribute 'push'\n"}
+[1.759618] (nrc_web_teleop) StderrLine: {'line': b'Exception ignored in: <function Interpreter.__del__ at 0x72924e37c790>\n'}
+[1.759674] (nrc_web_teleop) StderrLine: {'line': b'Traceback (most recent call last):\n'}
+[1.759697] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2094, in __del__\n'}
+[1.759716] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2157, in shutdown\n'}
+[1.759735] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2647, in finalize\n'}
+[1.759765] (nrc_web_teleop) StderrLine: {'line': b'  File "/usr/lib/python3/dist-packages/em.py", line 2200, in push\n'}
+[1.759782] (nrc_web_teleop) StderrLine: {'line': b"AttributeError: '_io.TextIOWrapper' object has no attribute 'push'\n"}
+[1.763135] (nrc_web_teleop) StderrLine: {'line': b'gmake[2]: *** [CMakeFiles/nrc_web_teleop__rosidl_generator_c.dir/build.make:160: rosidl_generator_c/nrc_web_teleop/action/move_to_pregrasp.h] Interrupt\n'}
+[1.763267] (nrc_web_teleop) StderrLine: {'line': b'gmake[1]: *** [CMakeFiles/Makefile2:215: CMakeFiles/nrc_web_teleop__rosidl_generator_c.dir/all] Interrupt\n'}
+[1.763751] (nrc_web_teleop) StderrLine: {'line': b'gmake[2]: *** [CMakeFiles/nrc_web_teleop__cpp.dir/build.make:186: rosidl_generator_cpp/nrc_web_teleop/action/move_to_pregrasp.hpp] Interrupt\n'}
+[1.763830] (nrc_web_teleop) StderrLine: {'line': b'gmake[1]: *** [CMakeFiles/Makefile2:268: CMakeFiles/nrc_web_teleop__cpp.dir/all] Interrupt\n'}
+[1.763946] (nrc_web_teleop) StderrLine: {'line': b'gmake: *** [Makefile:146: all] Interrupt\n'}
+[1.765029] (nrc_web_teleop) CommandEnded: {'returncode': -2}
+[1.769628] (nrc_web_teleop) JobEnded: {'identifier': 'nrc_web_teleop', 'rc': 'SIGINT'}
+[1.779863] (-) EventReactorShutdown: {}

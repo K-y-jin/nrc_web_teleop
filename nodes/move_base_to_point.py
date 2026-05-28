@@ -6,7 +6,7 @@ import traceback
 from typing import Generator, List, Optional, Tuple
 
 import numpy as np
-from geometry_msgs.msg import Point, PoseStamped, Quaternion
+from geometry_msgs.msg import PoseStamped
 
 import rclpy
 
@@ -41,7 +41,6 @@ from nrc_web_teleop_helpers.constants import (
 from nrc_web_teleop_helpers.conversions import (
     remaining_time,
     ros_msg_to_cv2_image,
-    tf2_transform,
     tf_lookup_matrix,
 )
 from nrc_web_teleop_helpers.move_to_action_state import MoveToActionState
@@ -247,26 +246,31 @@ class MoveBaseToPointNode(Node):
         if image_msg is None:
             return action_error_callback("No navigation camera image received yet")
 
-        # goal_pose 는 PRED_GOAL 에서 odom 프레임으로 설정됨.
+        # goal_pose 는 MoveToActionState.get_motion_executor signature 호환용
+        # placeholder. MoveToActionState 의 모든 state 가 자체 PoseStamped 를
+        # 만들어 쓰므로 본 노드에서는 채우지 않는다.
         goal_pose = PoseStamped()
 
-        # goal_positions: base_rotation 은 PRED_GOAL 에서 계산해 갱신, head_pan
-        # 은 항상 0 (base 가 클릭 방향을 향한 뒤 head 는 정면).
+        # goal_positions: BASE_ROTATION / BASE_TRANSLATION 은 PRED_GOAL 에서
+        # 계산해 갱신, head_pan 은 항상 0 (base 가 클릭 방향을 향한 뒤 head 는
+        # 정면).
         goal_positions = {
             Joint.BASE_ROTATION: 0.0,
+            Joint.BASE_TRANSLATION: 0.0,
             Joint.HEAD_PAN: 0.0,
         }
 
         # 마커 상태(피드백으로 UI 전달).
-        # - PRED_READY/PRED_GOAL: click 마커 표시(스펙).
+        # - PRED_READY/PRED_GOAL: click 마커 표시.
         # - ROTATE_BASE: 둘 다 숨김.
-        # - TRANSLATE_BASE: stop 마커 표시 + base 전진에 따라 갱신.
+        # - TRANSLATE_BASE: base_goal 마커 (red '+') 표시 + base 전진에 따라
+        #   픽셀 갱신.
         # - TERMINAL: 둘 다 숨김.
         marker_state = {
             "show_click": True,
-            "show_stop": False,
-            "stop_u": 0.0,
-            "stop_v": 0.0,
+            "show_base_goal": False,
+            "base_goal_u": 0.0,
+            "base_goal_v": 0.0,
             "translation_active": False,
         }
 
@@ -276,24 +280,22 @@ class MoveBaseToPointNode(Node):
 
         def publish_feedback(_distance_error: float = 0.0) -> None:
             """진행 피드백. 마커는 marker_state 에 따라 표시/갱신."""
-            if marker_state["show_stop"] and marker_state.get("translation_active"):
+            if marker_state["show_base_goal"] and marker_state.get("translation_active"):
                 raw = marker_state["raw_distance"]  # m
                 if raw != 0.0:
                     remaining = float(_distance_error) if _distance_error else 0.0
                     ratio = (BASE_MARGIN + remaining) / raw
                     ratio = max(min(ratio, 1.0), 0.0)
-                    marker_state["stop_u"] = ref_u_holder[0] + ratio * (
+                    marker_state["base_goal_u"] = ref_u_holder[0] + ratio * (
                         marker_state["post_click_u"] - ref_u_holder[0]
                     )
-                    marker_state["stop_v"] = ref_v_holder[0] + ratio * (
+                    marker_state["base_goal_v"] = ref_v_holder[0] + ratio * (
                         marker_state["post_click_v"] - ref_v_holder[0]
                     )
-            feedback.new_scaled_u = raw_scaled_u
-            feedback.new_scaled_v = raw_scaled_v
             feedback.show_click_marker = marker_state["show_click"]
-            feedback.new_stop_scaled_u = float(marker_state["stop_u"])
-            feedback.new_stop_scaled_v = float(marker_state["stop_v"])
-            feedback.show_stop_marker = marker_state["show_stop"]
+            feedback.new_base_goal_scaled_u = float(marker_state["base_goal_u"])
+            feedback.new_base_goal_scaled_v = float(marker_state["base_goal_v"])
+            feedback.show_base_goal_marker = marker_state["show_base_goal"]
             feedback.elapsed_time = (self.get_clock().now() - start_time).to_msg()
             goal_handle.publish_feedback(feedback)
 
@@ -330,25 +332,12 @@ class MoveBaseToPointNode(Node):
                     raise RuntimeError("Click point at base origin")
 
                 # base_rotation: base x-축이 클릭 방향을 향하도록.
+                # base_translation: ROTATE_BASE 후 base x-축이 클릭 방향이
+                # 되므로, 남은 전진 거리는 raw_distance - BASE_MARGIN.
                 goal_positions[Joint.BASE_ROTATION] = float(np.arctan2(cy, cx))
-
-                # T0 base 의 base 정지 예상 위치 (BASE_MARGIN 남김).
-                arm_frac = (raw_distance - BASE_MARGIN) / raw_distance
-                goal_base_x = cx * arm_frac
-                goal_base_y = cy * arm_frac
-                goal_pose.header.frame_id = Frame.BASE_LINK.value
-                goal_pose.header.stamp = pred_image_msg.header.stamp
-                goal_pose.pose.position = Point(
-                    x=goal_base_x, y=goal_base_y, z=0.0
+                goal_positions[Joint.BASE_TRANSLATION] = (
+                    raw_distance - BASE_MARGIN
                 )
-                goal_pose.pose.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
-                ok, goal_pose_odom = tf2_transform(
-                    self.tf_buffer, goal_pose, Frame.ODOM.value, self.tf_timeout,
-                )
-                if not ok:
-                    raise RuntimeError("Failed to transform goal_pose to odom")
-                goal_pose.header = goal_pose_odom.header
-                goal_pose.pose = goal_pose_odom.pose
 
                 # 마커 보간용: 이미지에서 DEPTH_REF↔click 직선을 image-forward
                 # 에 정렬한 좌표(post_click).
@@ -408,17 +397,17 @@ class MoveBaseToPointNode(Node):
             if len(motion_executors) == 0:
                 # state 진입 시 마커 표시 상태 전환.
                 if state_i == rotate_state_i:
-                    # ROTATE_BASE 진입: click/stop 마커 둘 다 숨김.
+                    # ROTATE_BASE 진입: click/base_goal 마커 둘 다 숨김.
                     marker_state["show_click"] = False
-                    marker_state["show_stop"] = False
+                    marker_state["show_base_goal"] = False
                     publish_feedback()
                 elif state_i == translate_state_i:
-                    # TRANSLATE_BASE 진입: stop 마커 표시 시작 (post_click 위치).
+                    # TRANSLATE_BASE 진입: base_goal 마커 표시 시작 (post_click 위치).
                     marker_state["show_click"] = False
-                    marker_state["show_stop"] = True
+                    marker_state["show_base_goal"] = True
                     marker_state["translation_active"] = True
-                    marker_state["stop_u"] = marker_state["post_click_u"]
-                    marker_state["stop_v"] = marker_state["post_click_v"]
+                    marker_state["base_goal_u"] = marker_state["post_click_u"]
+                    marker_state["base_goal_v"] = marker_state["post_click_v"]
                     publish_feedback(marker_state["translation_total"])
                 for state in concurrent_states:
                     motion_executor = state.get_motion_executor(

@@ -119,9 +119,11 @@ TILT_READY_TOLERANCE = 0.05
 # 나머지 부분은 모두 m 단위로 통일되어 있다.
 DEPTH_REF = (695, 300, 1084)  # row, col, depth_mm
 
-# Move Gripper 액션: base가 멈춘 뒤 팔이 타깃까지 닿을 수 있도록 base를
-# 팔 기본 도달 길이만큼 앞에 정지시킨다 (raw 거리 - DEFAULT_ARM_LENGTH).
-DEFAULT_ARM_LENGTH = 0.8  # m
+# Move Gripper 액션: 그리퍼로 물체를 조작하기에 적당한 base ↔ 타깃 거리(m).
+# 현재 base ↔ 타깃 거리가 OPTIMAL_DISTANCE 와 BASE_DISTANCE_TOLERANCE 이내면
+# RELOCATE_BASE 를 생략, 그렇지 않으면 OPTIMAL_DISTANCE 가 되도록 base 이동.
+OPTIMAL_DISTANCE = 0.8  # m
+BASE_DISTANCE_TOLERANCE = 0.05  # m
 # Move Base 액션: base 자체를 타깃 근처까지 보낼 때, 충돌 회피용으로
 # 남겨두는 안전 마진(m). raw 거리 - BASE_MARGIN 만큼 전진한다.
 BASE_MARGIN = 0.35  # m
@@ -212,8 +214,8 @@ def get_pred_ready_configuration() -> Dict[Joint, float]:
     return {
         Joint.ARM_L0: 0.0,
         Joint.ARM_LIFT: 0.9,
-        Joint.WRIST_YAW: 0.7854,
-        Joint.WRIST_PITCH: -0.497,
+        Joint.WRIST_YAW: 0.7854,  # 45 deg nav 카메라에 안 잡힘.
+        Joint.WRIST_PITCH: -0.0,
         Joint.WRIST_ROLL: 0.0,
     }
 

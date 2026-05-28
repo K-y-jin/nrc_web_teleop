@@ -145,6 +145,13 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
         scaledXY: [number, number] | null
     ) => void = undefined;
     /**
+     * TRANSLATE_BASE 진행 중 translation_goal 을 nav 카메라 view 에 투영한
+     * lime '+' 마커 위치 갱신/숨기는 콜백. null = 숨김.
+     */
+    private translationGoalScaledXYCallback?: (
+        scaledXY: [number, number] | null
+    ) => void = undefined;
+    /**
      * Callback function to update the distance result in the operator interface.
      */
     private distanceResultCallback?: (result: {
@@ -203,19 +210,18 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
     public handleMoveBaseToPointActionFeedback(
         feedback: MoveBaseToPointActionFeedback
     ) {
-        if (this.selectedLocationScaledXYCallback) {
-            this.selectedLocationScaledXYCallback(
-                feedback.show_click_marker
-                    ? [feedback.new_scaled_u, feedback.new_scaled_v]
-                    : null
-            );
+        // Click 마커: 위치는 operator 측 자체 보유. show_click_marker false 면
+        // 숨기기만, true 면 기존 값 유지 (콜백 호출 안 함).
+        if (this.selectedLocationScaledXYCallback && !feedback.show_click_marker) {
+            this.selectedLocationScaledXYCallback(null);
         }
+        // MoveBase 의 base_goal 마커는 red '+' (= stopScaledXY 채널).
         if (this.stopScaledXYCallback) {
             this.stopScaledXYCallback(
-                feedback.show_stop_marker
+                feedback.show_base_goal_marker
                     ? [
-                          feedback.new_stop_scaled_u,
-                          feedback.new_stop_scaled_v,
+                          feedback.new_base_goal_scaled_u,
+                          feedback.new_base_goal_scaled_v,
                       ]
                     : null
             );
@@ -225,11 +231,31 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
     public handleMoveGripperToPointActionFeedback(
         feedback: MoveGripperToPointActionFeedback
     ) {
-        if (this.selectedLocationScaledXYCallback) {
-            this.selectedLocationScaledXYCallback([
-                feedback.new_scaled_u,
-                feedback.new_scaled_v,
-            ]);
+        // Click 마커: operator 측 자체 보유. show_click_marker false 면 숨김.
+        if (this.selectedLocationScaledXYCallback && !feedback.show_click_marker) {
+            this.selectedLocationScaledXYCallback(null);
+        }
+        // gripper_goal (red '+') → stopScaledXY 채널 (red 마커).
+        if (this.stopScaledXYCallback) {
+            this.stopScaledXYCallback(
+                feedback.show_gripper_goal_marker
+                    ? [
+                          feedback.new_gripper_goal_scaled_u,
+                          feedback.new_gripper_goal_scaled_v,
+                      ]
+                    : null
+            );
+        }
+        // base_goal (lime '+') → translationGoalScaledXY 채널 (lime 마커).
+        if (this.translationGoalScaledXYCallback) {
+            this.translationGoalScaledXYCallback(
+                feedback.show_base_goal_marker
+                    ? [
+                          feedback.new_base_goal_scaled_u,
+                          feedback.new_base_goal_scaled_v,
+                      ]
+                    : null
+            );
         }
     }
     /**
@@ -639,6 +665,12 @@ export class UnderVideoFunctionProvider extends FunctionProvider {
         callback: (scaledXY: [number, number] | null) => void
     ) {
         this.stopScaledXYCallback = callback;
+    }
+
+    public setTranslationGoalScaledXYCallback(
+        callback: (scaledXY: [number, number] | null) => void
+    ) {
+        this.translationGoalScaledXYCallback = callback;
     }
 
     public handleDistanceResult(result: {

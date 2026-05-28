@@ -1,0 +1,200 @@
+[0.006s] Invoking command in '/root/ament_ws/src/nrc_web_teleop/build/nrc_web_teleop': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/root/ament_ws/install/tf2_web_republisher_py:/root/ament_ws/install/stretch_simulation:/root/ament_ws/install/stretch_ros_tutorials:/root/ament_ws/install/stretch_funmap:/root/ament_ws/install/stretch_calibration:/root/ament_ws/install/stretch_demos:/root/ament_ws/install/stretch_deep_perception:/root/ament_ws/install/stretch_core:/root/ament_ws/install/respeaker_ros2:/root/ament_ws/install/hello_helpers:/opt/ros/humble /usr/bin/cmake /root/ament_ws/src/nrc_web_teleop -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/root/ament_ws/src/nrc_web_teleop/install/nrc_web_teleop
+[0.072s] -- The C compiler identification is GNU 11.4.0
+[0.099s] -- The CXX compiler identification is GNU 11.4.0
+[0.103s] -- Detecting C compiler ABI info
+[0.134s] -- Detecting C compiler ABI info - done
+[0.137s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.138s] -- Detecting C compile features
+[0.138s] -- Detecting C compile features - done
+[0.139s] -- Detecting CXX compiler ABI info
+[0.174s] -- Detecting CXX compiler ABI info - done
+[0.178s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.178s] -- Detecting CXX compile features
+[0.178s] -- Detecting CXX compile features - done
+[0.184s] -- Found ament_cmake: 1.3.11 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.327s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[0.368s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[0.423s] -- Found geometry_msgs: 4.9.0 (/opt/ros/humble/share/geometry_msgs/cmake)
+[0.470s] -- Found rosidl_generator_c: 3.1.6 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.478s] -- Found rosidl_adapter: 3.1.6 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.487s] -- Found rosidl_generator_cpp: 3.1.6 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.499s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.515s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.538s] -- Found rosbridge_server: 1.3.2 (/root/ament_ws/install/rosbridge_server/share/rosbridge_server/cmake)
+[0.542s] -- Found rosidl_default_generators: 1.2.0 (/opt/ros/humble/share/rosidl_default_generators/cmake)
+[0.790s] -- Found ament_cmake_ros: 0.10.0 (/opt/ros/humble/share/ament_cmake_ros/cmake)
+[1.103s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[1.224s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[1.245s] -- Found PythonInterp: /usr/bin/python3 (found suitable version "3.10.12", minimum required is "3.6") 
+[1.252s] -- Found python_cmake_module: 0.10.0 (/opt/ros/humble/share/python_cmake_module/cmake)
+[1.278s] -- Found PythonLibs: /usr/lib/x86_64-linux-gnu/libpython3.10.so (found suitable version "3.10.12", minimum required is "3.5") 
+[1.278s] -- Using PYTHON_EXECUTABLE: /usr/bin/python3
+[1.278s] -- Using PYTHON_INCLUDE_DIRS: /usr/include/python3.10
+[1.278s] -- Using PYTHON_LIBRARIES: /usr/lib/x86_64-linux-gnu/libpython3.10.so
+[1.299s] -- Found PythonExtra: .so  
+[1.357s] -- Configuring done
+[1.375s] -- Generating done
+[1.381s] -- Build files have been written to: /root/ament_ws/src/nrc_web_teleop/build/nrc_web_teleop
+[1.385s] Invoked command in '/root/ament_ws/src/nrc_web_teleop/build/nrc_web_teleop' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/root/ament_ws/install/tf2_web_republisher_py:/root/ament_ws/install/stretch_simulation:/root/ament_ws/install/stretch_ros_tutorials:/root/ament_ws/install/stretch_funmap:/root/ament_ws/install/stretch_calibration:/root/ament_ws/install/stretch_demos:/root/ament_ws/install/stretch_deep_perception:/root/ament_ws/install/stretch_core:/root/ament_ws/install/respeaker_ros2:/root/ament_ws/install/hello_helpers:/opt/ros/humble /usr/bin/cmake /root/ament_ws/src/nrc_web_teleop -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/root/ament_ws/src/nrc_web_teleop/install/nrc_web_teleop
+[1.386s] Invoking command in '/root/ament_ws/src/nrc_web_teleop/build/nrc_web_teleop': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/root/ament_ws/install/tf2_web_republisher_py:/root/ament_ws/install/stretch_simulation:/root/ament_ws/install/stretch_ros_tutorials:/root/ament_ws/install/stretch_funmap:/root/ament_ws/install/stretch_calibration:/root/ament_ws/install/stretch_demos:/root/ament_ws/install/stretch_deep_perception:/root/ament_ws/install/stretch_core:/root/ament_ws/install/respeaker_ros2:/root/ament_ws/install/hello_helpers:/opt/ros/humble /usr/bin/cmake --build /root/ament_ws/src/nrc_web_teleop/build/nrc_web_teleop -- -j16 -l16
+[1.406s] [  1%] [34m[1mGenerating C code for ROS interfaces[0m
+[1.410s] [  3%] [34m[1mGenerating C++ code for ROS interfaces[0m
+[1.413s] [  3%] Built target ament_cmake_python_symlink_nrc_web_teleop_helpers
+[1.413s] [  3%] Built target ament_cmake_python_symlink_nrc_web_teleop
+[1.558s] running egg_info
+[1.559s] running egg_info
+[1.559s] creating nrc_web_teleop.egg-info
+[1.559s] creating nrc_web_teleop_helpers.egg-info
+[1.559s] writing nrc_web_teleop.egg-info/PKG-INFO
+[1.559s] writing nrc_web_teleop_helpers.egg-info/PKG-INFO
+[1.559s] writing dependency_links to nrc_web_teleop_helpers.egg-info/dependency_links.txt
+[1.559s] writing dependency_links to nrc_web_teleop.egg-info/dependency_links.txt
+[1.559s] writing top-level names to nrc_web_teleop_helpers.egg-info/top_level.txt
+[1.559s] writing top-level names to nrc_web_teleop.egg-info/top_level.txt
+[1.559s] writing manifest file 'nrc_web_teleop.egg-info/SOURCES.txt'
+[1.559s] writing manifest file 'nrc_web_teleop_helpers.egg-info/SOURCES.txt'
+[1.560s] reading manifest file 'nrc_web_teleop.egg-info/SOURCES.txt'
+[1.561s] writing manifest file 'nrc_web_teleop.egg-info/SOURCES.txt'
+[1.561s] reading manifest file 'nrc_web_teleop_helpers.egg-info/SOURCES.txt'
+[1.561s] writing manifest file 'nrc_web_teleop_helpers.egg-info/SOURCES.txt'
+[1.575s] [  3%] Built target ament_cmake_python_build_nrc_web_teleop_helpers_egg
+[1.575s] [  3%] Built target ament_cmake_python_build_nrc_web_teleop_egg
+[1.745s] Traceback (most recent call last):
+[1.745s] Traceback (most recent call last):
+[1.746s]   File "/opt/ros/humble/share/rosidl_generator_c/cmake/../../../lib/rosidl_generator_c/rosidl_generator_c", line 38, in <module>
+[1.746s]   File "/opt/ros/humble/share/rosidl_generator_cpp/cmake/../../../lib/rosidl_generator_cpp/rosidl_generator_cpp", line 38, in <module>
+[1.746s] gmake[2]: *** Deleting file 'rosidl_generator_cpp/nrc_web_teleop/action/move_to_pregrasp.hpp'
+[1.746s] gmake[2]: *** Deleting file 'rosidl_generator_c/nrc_web_teleop/action/move_to_pregrasp.h'
+[1.746s]     sys.exit(main())
+[1.746s]     sys.exit(main())
+[1.746s]   File "/opt/ros/humble/share/rosidl_generator_c/cmake/../../../lib/rosidl_generator_c/rosidl_generator_c", line 34, in main
+[1.746s]   File "/opt/ros/humble/share/rosidl_generator_cpp/cmake/../../../lib/rosidl_generator_cpp/rosidl_generator_cpp", line 34, in main
+[1.746s]     generate_c(args.generator_arguments_file)
+[1.746s]     generate_cpp(args.generator_arguments_file)
+[1.746s]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_generator_c/__init__.py", line 37, in generate_c
+[1.746s]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_generator_cpp/__init__.py", line 39, in generate_cpp
+[1.749s]     return generate_files(
+[1.749s]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 87, in generate_files
+[1.749s]     return generate_files(
+[1.749s]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 87, in generate_files
+[1.749s]     expand_template(
+[1.749s]     expand_template(
+[1.749s]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 149, in expand_template
+[1.749s]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 149, in expand_template
+[1.749s]     interpreter.string(template_content, template_path, locals=data)
+[1.749s]     interpreter.string(template_content, template_path, locals=data)
+[1.749s]   File "/usr/lib/python3/dist-packages/em.py", line 2391, in string
+[1.749s]   File "/usr/lib/python3/dist-packages/em.py", line 2391, in string
+[1.750s]     self.safe(scanner, True, locals)
+[1.750s]     self.safe(scanner, True, locals)
+[1.750s]   File "/usr/lib/python3/dist-packages/em.py", line 2401, in safe
+[1.750s]   File "/usr/lib/python3/dist-packages/em.py", line 2401, in safe
+[1.750s]     self.parse(scanner, locals)
+[1.750s]   File "/usr/lib/python3/dist-packages/em.py", line 2421, in parse
+[1.750s]     self.parse(scanner, locals)
+[1.750s]   File "/usr/lib/python3/dist-packages/em.py", line 2421, in parse
+[1.750s]     token.run(self, locals)
+[1.750s]   File "/usr/lib/python3/dist-packages/em.py", line 1547, in run
+[1.750s]     token.run(self, locals)
+[1.750s]   File "/usr/lib/python3/dist-packages/em.py", line 1547, in run
+[1.750s]     self.subrun(info[0][1], interpreter, locals)
+[1.750s]   File "/usr/lib/python3/dist-packages/em.py", line 1631, in subrun
+[1.750s]     self.subrun(info[0][1], interpreter, locals)
+[1.750s]   File "/usr/lib/python3/dist-packages/em.py", line 1631, in subrun
+[1.750s]     token.run(interpreter, locals)
+[1.750s]   File "/usr/lib/python3/dist-packages/em.py", line 1425, in run
+[1.750s]     token.run(interpreter, locals)
+[1.750s]   File "/usr/lib/python3/dist-packages/em.py", line 1425, in run
+[1.750s]     interpreter.execute(self.code, locals)
+[1.750s]   File "/usr/lib/python3/dist-packages/em.py", line 2596, in execute
+[1.750s]     interpreter.execute(self.code, locals)
+[1.750s]   File "/usr/lib/python3/dist-packages/em.py", line 2596, in execute
+[1.750s]     _exec(statements, self.globals, locals)
+[1.750s]   File "<string>", line 2, in <module>
+[1.750s]     _exec(statements, self.globals, locals)
+[1.751s]   File "<string>", line 2, in <module>
+[1.751s]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 198, in _expand_template
+[1.751s]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 198, in _expand_template
+[1.751s]     interpreter.string(content, str(template_path), kwargs)
+[1.751s]     interpreter.string(content, str(template_path), kwargs)
+[1.751s]   File "/usr/lib/python3/dist-packages/em.py", line 2391, in string
+[1.751s]   File "/usr/lib/python3/dist-packages/em.py", line 2391, in string
+[1.751s]     self.safe(scanner, True, locals)
+[1.751s]     self.safe(scanner, True, locals)
+[1.751s]   File "/usr/lib/python3/dist-packages/em.py", line 2401, in safe
+[1.751s]   File "/usr/lib/python3/dist-packages/em.py", line 2401, in safe
+[1.751s]     self.parse(scanner, locals)
+[1.751s]   File "/usr/lib/python3/dist-packages/em.py", line 2421, in parse
+[1.751s]     self.parse(scanner, locals)
+[1.751s]   File "/usr/lib/python3/dist-packages/em.py", line 2421, in parse
+[1.751s]     token.run(self, locals)
+[1.751s]   File "/usr/lib/python3/dist-packages/em.py", line 1527, in run
+[1.751s]     token.run(self, locals)
+[1.751s]   File "/usr/lib/python3/dist-packages/em.py", line 1425, in run
+[1.752s]     self.subrun(subtokens, interpreter, locals)
+[1.752s]   File "/usr/lib/python3/dist-packages/em.py", line 1631, in subrun
+[1.752s]     interpreter.execute(self.code, locals)
+[1.752s]   File "/usr/lib/python3/dist-packages/em.py", line 2596, in execute
+[1.752s]     token.run(interpreter, locals)
+[1.752s]   File "/usr/lib/python3/dist-packages/em.py", line 1547, in run
+[1.752s]     _exec(statements, self.globals, locals)
+[1.752s]   File "<string>", line 2, in <module>
+[1.752s]     self.subrun(info[0][1], interpreter, locals)
+[1.752s]   File "/usr/lib/python3/dist-packages/em.py", line 1631, in subrun
+[1.752s]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 198, in _expand_template
+[1.752s]     interpreter.string(content, str(template_path), kwargs)
+[1.752s]   File "/usr/lib/python3/dist-packages/em.py", line 2391, in string
+[1.752s]     token.run(interpreter, locals)
+[1.752s]   File "/usr/lib/python3/dist-packages/em.py", line 1526, in run
+[1.752s]     if interpreter.evaluate(secondary.rest, locals):
+[1.752s]   File "/usr/lib/python3/dist-packages/em.py", line 2573, in evaluate
+[1.752s]     self.safe(scanner, True, locals)
+[1.752s]   File "/usr/lib/python3/dist-packages/em.py", line 2401, in safe
+[1.752s]     result = eval(expression, self.globals, locals)
+[1.752s]   File "<string>", line 1, in <module>
+[1.752s]     self.parse(scanner, locals)
+[1.752s]   File "/usr/lib/python3/dist-packages/em.py", line 2421, in parse
+[1.752s] KeyboardInterrupt
+[1.752s]     token.run(self, locals)
+[1.752s]   File "/usr/lib/python3/dist-packages/em.py", line 1425, in run
+[1.752s]     interpreter.execute(self.code, locals)
+[1.752s]   File "/usr/lib/python3/dist-packages/em.py", line 2596, in execute
+[1.752s]     _exec(statements, self.globals, locals)
+[1.753s]   File "<string>", line 2, in <module>
+[1.753s]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 198, in _expand_template
+[1.753s]     interpreter.string(content, str(template_path), kwargs)
+[1.753s]   File "/usr/lib/python3/dist-packages/em.py", line 2391, in string
+[1.753s]     self.safe(scanner, True, locals)
+[1.753s]   File "/usr/lib/python3/dist-packages/em.py", line 2401, in safe
+[1.753s]     self.parse(scanner, locals)
+[1.753s]   File "/usr/lib/python3/dist-packages/em.py", line 2417, in parse
+[1.753s]     token = scanner.one()
+[1.753s]   File "/usr/lib/python3/dist-packages/em.py", line 1984, in one
+[1.753s]     token.scan(self)
+[1.753s]   File "/usr/lib/python3/dist-packages/em.py", line 1311, in scan
+[1.753s]     q = scanner.next('$', 0, z, True)
+[1.753s]   File "/usr/lib/python3/dist-packages/em.py", line 1826, in next
+[1.753s]     c = self[i]
+[1.753s]   File "/usr/lib/python3/dist-packages/em.py", line 1683, in __getitem__
+[1.753s]     if isinstance(index, slice):
+[1.753s] KeyboardInterrupt
+[1.758s] Exception ignored in: <function Interpreter.__del__ at 0x7b9fb39d8550>
+[1.758s] Traceback (most recent call last):
+[1.758s]   File "/usr/lib/python3/dist-packages/em.py", line 2094, in __del__
+[1.758s]   File "/usr/lib/python3/dist-packages/em.py", line 2157, in shutdown
+[1.758s]   File "/usr/lib/python3/dist-packages/em.py", line 2647, in finalize
+[1.758s]   File "/usr/lib/python3/dist-packages/em.py", line 2200, in push
+[1.758s] AttributeError: '_io.TextIOWrapper' object has no attribute 'push'
+[1.759s] Exception ignored in: <function Interpreter.__del__ at 0x72924e37c790>
+[1.759s] Traceback (most recent call last):
+[1.759s]   File "/usr/lib/python3/dist-packages/em.py", line 2094, in __del__
+[1.759s]   File "/usr/lib/python3/dist-packages/em.py", line 2157, in shutdown
+[1.759s]   File "/usr/lib/python3/dist-packages/em.py", line 2647, in finalize
+[1.759s]   File "/usr/lib/python3/dist-packages/em.py", line 2200, in push
+[1.759s] AttributeError: '_io.TextIOWrapper' object has no attribute 'push'
+[1.763s] gmake[2]: *** [CMakeFiles/nrc_web_teleop__rosidl_generator_c.dir/build.make:160: rosidl_generator_c/nrc_web_teleop/action/move_to_pregrasp.h] Interrupt
+[1.763s] gmake[1]: *** [CMakeFiles/Makefile2:215: CMakeFiles/nrc_web_teleop__rosidl_generator_c.dir/all] Interrupt
+[1.763s] gmake[2]: *** [CMakeFiles/nrc_web_teleop__cpp.dir/build.make:186: rosidl_generator_cpp/nrc_web_teleop/action/move_to_pregrasp.hpp] Interrupt
+[1.764s] gmake[1]: *** [CMakeFiles/Makefile2:268: CMakeFiles/nrc_web_teleop__cpp.dir/all] Interrupt
+[1.764s] gmake: *** [Makefile:146: all] Interrupt
+[1.765s] Invoked command in '/root/ament_ws/src/nrc_web_teleop/build/nrc_web_teleop' returned '-2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/root/ament_ws/install/tf2_web_republisher_py:/root/ament_ws/install/stretch_simulation:/root/ament_ws/install/stretch_ros_tutorials:/root/ament_ws/install/stretch_funmap:/root/ament_ws/install/stretch_calibration:/root/ament_ws/install/stretch_demos:/root/ament_ws/install/stretch_deep_perception:/root/ament_ws/install/stretch_core:/root/ament_ws/install/respeaker_ros2:/root/ament_ws/install/hello_helpers:/opt/ros/humble /usr/bin/cmake --build /root/ament_ws/src/nrc_web_teleop/build/nrc_web_teleop -- -j16 -l16

@@ -20,17 +20,13 @@ uint8 STATUS_JOINTS_IN_COLLISION = 7
 uint8 status
 ---
 # Feedback
-# 클릭 마커 위치(원래 클릭한 정규화 픽셀).
-float32 new_scaled_u
-float32 new_scaled_v
-# false면 UI에서 클릭 마커를 숨긴다. (B) 액션 진행 중에는 false.
+# Click 마커 (사용자 클릭 위치, operator 가 자체 보유). false 면 UI 에서 숨김.
+# 진행 중에는 false.
 bool show_click_marker
-# DEFAULT_ARM_LENGTH_MM 만큼 base 쪽으로 당긴 base 정지 예상 위치.
-# 회전 후에는 base rotation이 반영된 위치로 갱신, translation 중에는
-# 진행률에 따라 base(=DEPTH_REF)에 가까워지는 위치로 갱신된다.
-float32 new_stop_scaled_u
-float32 new_stop_scaled_v
-# false면 UI에서 stop 마커를 숨긴다. 회전 진행 중에는 false, 회전 완료 후
-# translation 진행 중에는 true.
-bool show_stop_marker
+# Base goal 마커 (red '+'): base 정지 예상 위치를 현재 nav view 에 투영한
+# 정규화 픽셀. translation 진행률에 따라 갱신.
+float32 new_base_goal_scaled_u
+float32 new_base_goal_scaled_v
+# false 면 base goal 마커 숨김. 회전 중에는 false, translation 중에는 true.
+bool show_base_goal_marker
 builtin_interfaces/Duration elapsed_time

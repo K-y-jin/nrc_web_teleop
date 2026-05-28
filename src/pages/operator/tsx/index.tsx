@@ -229,10 +229,6 @@ function handleWebRTCMessage(message: WebRTCMessage | WebRTCMessage[]) {
             );
             break;
         case "moveGripperToPointActionFeedback":
-            console.log(
-                "[Debug] moveGripperToPointActionFeedback",
-                message.message
-            );
             underVideoFunctionProvider.handleMoveGripperToPointActionFeedback(
                 message.message
             );

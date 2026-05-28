@@ -213,12 +213,10 @@ export interface MoveBaseToPointActionFeedbackMessage {
 }
 
 export interface MoveBaseToPointActionFeedback {
-    new_scaled_u: number;
-    new_scaled_v: number;
     show_click_marker: boolean;
-    new_stop_scaled_u: number;
-    new_stop_scaled_v: number;
-    show_stop_marker: boolean;
+    new_base_goal_scaled_u: number;
+    new_base_goal_scaled_v: number;
+    show_base_goal_marker: boolean;
 }
 
 export interface MoveGripperToPointActionFeedbackMessage {
@@ -227,8 +225,13 @@ export interface MoveGripperToPointActionFeedbackMessage {
 }
 
 export interface MoveGripperToPointActionFeedback {
-    new_scaled_u: number;
-    new_scaled_v: number;
+    show_click_marker: boolean;
+    new_gripper_goal_scaled_u: number;
+    new_gripper_goal_scaled_v: number;
+    show_gripper_goal_marker: boolean;
+    new_base_goal_scaled_u: number;
+    new_base_goal_scaled_v: number;
+    show_base_goal_marker: boolean;
 }
 
 export interface GoalStatusMessage {

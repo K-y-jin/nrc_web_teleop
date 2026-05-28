@@ -24,9 +24,7 @@ import {
     ROSBatteryState,
     BatteryVoltageMessage,
     delay,
-    MoveBaseToPointActionFeedback,
     MoveBaseToPointActionFeedbackMessage,
-    MoveGripperToPointActionFeedback,
     MoveGripperToPointActionFeedbackMessage,
 } from "shared/util";
 import { AllVideoStreamComponent, VideoStream } from "./videostreams";
@@ -162,25 +160,24 @@ function forwardActionState(state: ActionState, type: string) {
     } as ActionStateMessage);
 }
 
-function forwardMoveBaseToPointActionFeedback(
-    feedback: MoveBaseToPointActionFeedback
-) {
+function forwardMoveBaseToPointActionFeedback(rawMsg: any) {
     if (!connection) throw "WebRTC connection undefined!";
 
+    // ROS2 action feedback 토픽 메시지는 { goal_id, feedback } wrapper.
+    const fb = (rawMsg && rawMsg.feedback) ? rawMsg.feedback : rawMsg;
     connection.sendData({
         type: "moveBaseToPointActionFeedback",
-        message: feedback,
+        message: fb,
     } as MoveBaseToPointActionFeedbackMessage);
 }
 
-function forwardMoveGripperToPointActionFeedback(
-    feedback: MoveGripperToPointActionFeedback
-) {
+function forwardMoveGripperToPointActionFeedback(rawMsg: any) {
     if (!connection) throw "WebRTC connection undefined!";
 
+    const fb = (rawMsg && rawMsg.feedback) ? rawMsg.feedback : rawMsg;
     connection.sendData({
         type: "moveGripperToPointActionFeedback",
-        message: feedback,
+        message: fb,
     } as MoveGripperToPointActionFeedbackMessage);
 }
 

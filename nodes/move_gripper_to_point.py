@@ -1,16 +1,38 @@
 #!/usr/bin/env python3
 
 # Standard Imports
+import os
+import sys
 import threading
-from tkinter import Y
+import time
 import traceback
 from typing import Union, Generator, List, Optional, Tuple
 import cv2
 import numpy as np
-from geometry_msgs.msg import Point, PoseStamped, Quaternion
+from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Header
 
 import rclpy
+import torch
+
+# GR-ConvNet 모델 클래스는 grconv/ 내부 상대 경로 (inference.models.grconvnet3
+# 등) 로 저장되어 있어 sys.path 에 grconv 디렉토리를 미리 추가해야 torch.load
+# 가 성공한다.
+import nrc_web_teleop_helpers as _helpers_pkg
+_GRCONV_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(_helpers_pkg.__file__), "grconv")
+)
+if _GRCONV_DIR not in sys.path:
+    sys.path.insert(0, _GRCONV_DIR)
+from inference.post_process import post_process_output  # noqa: E402
+
+GRCONV_PATH = os.path.join(
+    _GRCONV_DIR,
+    "trained-models",
+    "jacquard-rgbd-grconvnet3-drop0-ch32",
+    "epoch_42_iou_0.93",
+)
+GRCONV_OUTPUT_DIR = "output/grconv"
 
 # Third-Party Imports
 import stretch_urdf.urdf_utils as uu
@@ -31,9 +53,14 @@ from nrc_web_teleop.action import MoveGripperToPoint
 from nrc_web_teleop_helpers.constants import (
     Joint,
     Frame,
-    DEFAULT_ARM_LENGTH,
+    OPTIMAL_DISTANCE,
+    BASE_DISTANCE_TOLERANCE,
+    BASE_MARGIN,
 )
-from nrc_web_teleop_helpers.functions import compute_click_point_in_base
+from nrc_web_teleop_helpers.functions import (
+    compute_click_point_in_base,
+    project_base_point_to_nav_pixel,
+)
 from nrc_web_teleop_helpers.conversions import (
     deproject_pixel_to_pointcloud_point,
     depth_img_to_pointcloud,
@@ -161,6 +188,37 @@ class MoveGripperToPointNode(Node):
         
         # Create the action timeout
         self.action_timeout = Duration(seconds=action_timeout_secs)
+
+        # GR-ConvNet (grasp 예측) 모델 로드. __init__ 단계에서 한 번 로드해
+        # 매 액션 실행 시 PRED_GRASP 콜백이 즉시 사용 가능하도록 한다.
+        self.grconv_device: Optional[torch.device] = None
+        self.grconv_model: Optional[torch.nn.Module] = None
+        self._load_grconv_model()
+
+    def _load_grconv_model(self) -> None:
+        try:
+            self.grconv_device = (
+                torch.device("cuda")
+                if torch.cuda.is_available()
+                else torch.device("cpu")
+            )
+            self.grconv_model = torch.load(
+                GRCONV_PATH,
+                map_location=self.grconv_device,
+                weights_only=False,
+            )
+            self.grconv_model.eval()
+            in_ch = self.grconv_model.conv1.in_channels
+            self.get_logger().info(
+                f"GR-ConvNet loaded from {GRCONV_PATH} on "
+                f"{self.grconv_device} (input_channels={in_ch})"
+            )
+        except Exception:
+            self.get_logger().error(
+                f"Failed to load GR-ConvNet from {GRCONV_PATH}:\n"
+                f"{traceback.format_exc()}"
+            )
+            self.grconv_model = None
 
     def initialize(self) -> bool:
         # Initialize the controller
@@ -326,38 +384,52 @@ class MoveGripperToPointNode(Node):
     async def execute_callback(
         self, goal_handle: ServerGoalHandle
     ) -> MoveGripperToPoint.Result:
-    
-        # Start the timer
-        start_time = self.get_clock().now()
+        """
+        액션 실행. 재설계 흐름:
+            PRED_READY (depth pred 자세) → PRED_GOAL (클릭→goal_xyz_in_odom 계산)
+            → ROTATE_BASE+HEAD_PAN → TRANSLATE_BASE → GRASP_READY+HEAD_PAN
+            → TERMINAL.
 
-        # Initialize the feedback
+        OPTIMAL_DISTANCE 와 BASE_DISTANCE_TOLERANCE 로 base 재배치 필요성을
+        판단; 필요 없으면 goal_pose 를 현재 base 위치로 두어 ROTATE/TRANSLATE
+        가 즉시 종료한다.
+        """
+        start_time = self.get_clock().now()
         feedback = MoveGripperToPoint.Feedback()
 
-        # Functions to cleanup the action
         terminate_motion_executors = False
         motion_executors: List[Generator[MotionGeneratorRetval, None, None]] = []
 
         def cleanup() -> None:
-            """
-            Clean up before returning from the action.
-            """
             nonlocal terminate_motion_executors, motion_executors
             self.active_goal_request = None
-            self.get_logger().debug("Setting termination flag to True")
             terminate_motion_executors = True
-            # Execute the motion executors once more to process cancellation.
             if len(motion_executors) > 0:
                 try:
-                    for i, motion_executor in enumerate(motion_executors):
+                    for motion_executor in motion_executors:
                         _ = next(motion_executor)
                 except Exception:
                     self.get_logger().debug(traceback.format_exc())
+
+        # 액션 종료 시 모든 마커를 hide 한 final feedback 을 한 번 발행.
+        # marker_state / publish_feedback 가 아직 정의되기 전에 호출될 수도
+        # 있어 (예: 카메라 이미지 미수신으로 즉시 error 반환), 존재 여부 가드.
+        def hide_markers_and_publish_final_feedback() -> None:
+            try:
+                marker_state["show_click"] = False
+                marker_state["show_gripper_goal"] = False
+                marker_state["show_base_goal"] = False
+                publish_feedback()
+            except (NameError, UnboundLocalError):
+                # marker_state / publish_feedback 아직 미정의 — 무시.
+                pass
 
         def action_error_callback(
             error_msg: str = "Goal failed",
             status: int = MoveGripperToPoint.Result.STATUS_FAILURE,
         ) -> MoveGripperToPoint.Result:
             self.get_logger().error(error_msg)
+            hide_markers_and_publish_final_feedback()
             goal_handle.abort()
             cleanup()
             return MoveGripperToPoint.Result(status=status)
@@ -366,214 +438,436 @@ class MoveGripperToPointNode(Node):
             success_msg: str = "Goal succeeded",
         ) -> MoveGripperToPoint.Result:
             self.get_logger().info(success_msg)
+            hide_markers_and_publish_final_feedback()
             goal_handle.succeed()
             cleanup()
-            return MoveGripperToPoint.Result(status=MoveGripperToPoint.Result.STATUS_SUCCESS)
+            return MoveGripperToPoint.Result(
+                status=MoveGripperToPoint.Result.STATUS_SUCCESS
+            )
 
         def action_cancel_callback(
             cancel_msg: str = "Goal canceled",
         ) -> MoveGripperToPoint.Result:
             self.get_logger().info(cancel_msg)
+            hide_markers_and_publish_final_feedback()
             goal_handle.canceled()
             cleanup()
-            return MoveGripperToPoint.Result(status=MoveGripperToPoint.Result.STATUS_CANCELLED)
+            return MoveGripperToPoint.Result(
+                status=MoveGripperToPoint.Result.STATUS_CANCELLED
+            )
 
-        goal_point = None
-        # Get the initial goal point
-        raw_scaled_u, raw_scaled_v = (
-            goal_handle.request.scaled_u,
-            goal_handle.request.scaled_v,
-        )
-        goal_point = np.array([raw_scaled_u, raw_scaled_v])
-        self.get_logger().debug(f"##### Initial Goal Point: {goal_point}")
+        raw_scaled_u = goal_handle.request.scaled_u
+        raw_scaled_v = goal_handle.request.scaled_v
 
         with self.latest_navigation_camera_image_lock:
             image_msg = self.latest_navigation_camera_image
-                
-        goal_pose = PoseStamped()
-        # goal_pose.header.stamp = self.get_clock().now().to_msg()
-        # goal_pose.header.frame_id = "base_link"
-        # goal_pose.header = image_msg.header
+        if image_msg is None:
+            return action_error_callback("No navigation camera image received yet")
 
-        # Publich_feedback message
-        def publish_update_goal_point_feedback():
-            self.get_logger().info(f"##### Updated Goal Point: [{feedback.new_scaled_u}, {feedback.new_scaled_v}]")
+        # goal_pose 는 MoveToActionState.get_motion_executor signature 호환용
+        # placeholder. MoveToActionState 의 모든 state 가 자체 PoseStamped 를
+        # 만들어 쓰므로 본 노드에서는 채우지 않는다.
+        goal_pose = PoseStamped()
+
+        # goal_positions: BASE_ROTATION 과 BASE_TRANSLATION 은 PRED_GOAL 에서
+        # 계산해 갱신. HEAD_PAN 은 ROTATE/TRANSLATE 단계에서 0 (정면),
+        # GRASP_READY 단계에서 -π/2 (그리퍼 방향) 로 갱신.
+        goal_positions = {
+            Joint.BASE_ROTATION: 0.0,
+            Joint.BASE_TRANSLATION: 0.0,
+            Joint.HEAD_PAN: 0.0,
+        }
+
+        # 마커 상태(피드백으로 UI 전달).
+        # - click: 사용자 클릭 위치 (operator 측 자체 보유). 액션 진행 중에는
+        #   숨김.
+        # - gripper_goal: goal_pose (= 클릭점, world 고정) 을 현재 nav view 에
+        #   투영한 픽셀 (red '+', 매 iter 갱신).
+        # - base_goal: base_goal_pose (= base 도달 world 점) 을 현재 nav view
+        #   에 투영한 픽셀 (lime '+', 매 iter 갱신).
+        marker_state = {
+            "show_click": True,
+            "show_gripper_goal": False,
+            "gripper_goal_u": 0.0,
+            "gripper_goal_v": 0.0,
+            "show_base_goal": False,
+            "base_goal_u": 0.0,
+            "base_goal_v": 0.0,
+        }
+        # compute_pred_goal 에서 odom 으로 변환해 저장하는 world-fixed 점들.
+        # None 이면 아직 미계산 / RELOCATE 불필요.
+        click_xyz_in_odom_holder: List[Optional[np.ndarray]] = [None]
+        base_goal_xyz_in_odom_holder: List[Optional[np.ndarray]] = [None]
+
+        def _project_odom_point_to_nav_pixel(
+            point_in_odom: np.ndarray,
+        ) -> Optional[tuple]:
+            """odom 의 3D 점을 현재 base_link 와 nav_cam_link TF 로
+            정규화 nav 픽셀로 투영. 실패 시 None."""
+            T_base_from_odom = tf_lookup_matrix(
+                self.tf_buffer, Frame.BASE_LINK.value,
+                Frame.ODOM.value, self.tf_timeout,
+            )
+            T_nav_link_from_base = tf_lookup_matrix(
+                self.tf_buffer, Frame.NAV_CAM_LINK.value,
+                Frame.BASE_LINK.value, self.tf_timeout,
+            )
+            if T_base_from_odom is None or T_nav_link_from_base is None:
+                return None
+            point_h = np.append(point_in_odom, 1.0)
+            point_in_base = (T_base_from_odom @ point_h)[:3]
+            return project_base_point_to_nav_pixel(
+                point_in_base, T_nav_link_from_base,
+            )
+
+        def publish_feedback(_distance_error: float = 0.0) -> None:
+            # gripper_goal 픽셀 갱신.
+            if (
+                marker_state["show_gripper_goal"]
+                and click_xyz_in_odom_holder[0] is not None
+            ):
+                try:
+                    pixel = _project_odom_point_to_nav_pixel(
+                        click_xyz_in_odom_holder[0]
+                    )
+                    if pixel is not None:
+                        marker_state["gripper_goal_u"] = pixel[0]
+                        marker_state["gripper_goal_v"] = pixel[1]
+                except Exception:
+                    self.get_logger().error(traceback.format_exc())
+            # base_goal 픽셀 갱신.
+            if (
+                marker_state["show_base_goal"]
+                and base_goal_xyz_in_odom_holder[0] is not None
+            ):
+                try:
+                    pixel = _project_odom_point_to_nav_pixel(
+                        base_goal_xyz_in_odom_holder[0]
+                    )
+                    if pixel is not None:
+                        marker_state["base_goal_u"] = pixel[0]
+                        marker_state["base_goal_v"] = pixel[1]
+                except Exception:
+                    self.get_logger().error(traceback.format_exc())
+            feedback.show_click_marker = marker_state["show_click"]
+            feedback.new_gripper_goal_scaled_u = float(
+                marker_state["gripper_goal_u"]
+            )
+            feedback.new_gripper_goal_scaled_v = float(
+                marker_state["gripper_goal_v"]
+            )
+            feedback.show_gripper_goal_marker = marker_state["show_gripper_goal"]
+            feedback.new_base_goal_scaled_u = float(marker_state["base_goal_u"])
+            feedback.new_base_goal_scaled_v = float(marker_state["base_goal_v"])
+            feedback.show_base_goal_marker = marker_state["show_base_goal"]
             feedback.elapsed_time = (self.get_clock().now() - start_time).to_msg()
             goal_handle.publish_feedback(feedback)
-            self.save_images(save_gripper=True)
 
-        # Execute the states
-        motion_executors: List[Generator[MotionGeneratorRetval, None, None]] = []
+        publish_feedback()
+
+        # PRED_GOAL state 의 success_callback. 클릭 픽셀을 base→nav_cam TF 로
+        # 환산해, base ↔ 클릭 거리가 OPTIMAL_DISTANCE 가 되도록
+        # goal_positions[BASE_ROTATION], [BASE_TRANSLATION] 을 채운다. 이미
+        # OPTIMAL_DISTANCE 이내면 RELOCATE (ROTATE_BASE+TRANSLATE_BASE) 단계
+        # 전체를 skip. 그렇지 않으면 click_xyz_in_odom (gripper_goal, red 마커)
+        # 와 base_goal_xyz_in_odom (base_goal, lime 마커) 을 holder 에 저장.
+        pred_goal_state = {
+            "failed": False,
+            "error_msg": "",
+            "skip_relocate": False,
+        }
+
+        def compute_pred_goal() -> None:
+            try:
+                with self.latest_navigation_camera_image_lock:
+                    pred_image_msg = self.latest_navigation_camera_image
+                if pred_image_msg is None:
+                    raise RuntimeError("No navigation camera image at PRED_GOAL")
+                nav_image = ros_msg_to_cv2_image(pred_image_msg, self.cv_bridge)
+                T_base_from_nav_link = tf_lookup_matrix(
+                    self.tf_buffer, Frame.BASE_LINK.value,
+                    Frame.NAV_CAM_LINK.value, self.tf_timeout,
+                    stamp=pred_image_msg.header.stamp,
+                )
+                if T_base_from_nav_link is None:
+                    raise RuntimeError("Failed to lookup base<-nav_cam TF")
+                result = compute_click_point_in_base(
+                    nav_image, raw_scaled_u, raw_scaled_v, T_base_from_nav_link,
+                )
+                if result is None:
+                    raise RuntimeError("Failed to deproject click pixel")
+                click_xyz, _z = result
+                cx, cy = float(click_xyz[0]), float(click_xyz[1])
+                raw_distance = float(np.hypot(cx, cy))  # m
+                if raw_distance == 0.0:
+                    raise RuntimeError("Click point at base origin")
+
+                if abs(raw_distance - OPTIMAL_DISTANCE) < BASE_DISTANCE_TOLERANCE:
+                    # RELOCATE_BASE 전체 skip (ROTATE_BASE+TRANSLATE_BASE).
+                    pred_goal_state["skip_relocate"] = True
+                    self.get_logger().info(
+                        f"PRED_GOAL: base↔target xy-distance = "
+                        f"{raw_distance:.3f} m ≈ OPTIMAL_DISTANCE "
+                        f"({OPTIMAL_DISTANCE:.3f} m); skipping RELOCATE_BASE"
+                    )
+                    return
+
+                # base_rotation: base x-축이 클릭 방향을 향하도록.
+                # base_translation: 실제 base 가 클릭점에서 OPTIMAL_DISTANCE
+                # 만큼 떨어진 지점에 정지하도록 raw_distance - OPTIMAL_DISTANCE
+                # 만큼 전진. (BASE_MARGIN 차감 안 함 — gripper 잡기 거리 보존.)
+                goal_positions[Joint.BASE_ROTATION] = float(np.arctan2(cy, cx))
+                goal_positions[Joint.BASE_TRANSLATION] = (
+                    raw_distance - OPTIMAL_DISTANCE
+                )
+                # UI lime 마커 추종용 base_goal 위치 (T0 base 기준).
+                # - Forward case (raw_distance >= marker_distance): 클릭점에서
+                #   (OPTIMAL_DISTANCE - BASE_MARGIN) 만큼 base 쪽으로 떨어진
+                #   지점 = final base 보다 BASE_MARGIN 만큼 클릭 쪽 (안전 buffer
+                #   시각화).
+                # - Backup case (raw_distance < marker_distance): 위 공식이면
+                #   marker 가 초기 base 뒤쪽이 되어 nav 카메라 뒤로 투영됨.
+                #   이 경우 marker 를 final base 위치 자체에 둠 (= 그리퍼가
+                #   도달할 때 base 가 멈추는 위치를 그대로 표시).
+                marker_distance = OPTIMAL_DISTANCE - BASE_MARGIN
+                if raw_distance >= marker_distance:
+                    frac = 1.0 - marker_distance / raw_distance
+                    marker_mode = "forward (BASE_MARGIN buffer)"
+                else:
+                    # final base 위치 = raw - OPTIMAL (음수, 초기 base 뒤쪽).
+                    frac = (raw_distance - OPTIMAL_DISTANCE) / raw_distance
+                    marker_mode = "backup (at final base)"
+                goal_base_x = cx * frac
+                goal_base_y = cy * frac
+                self.get_logger().info(
+                    f"PRED_GOAL: base↔target xy-distance = "
+                    f"{raw_distance:.3f} m, base will stop at "
+                    f"OPTIMAL_DISTANCE ({OPTIMAL_DISTANCE:.3f} m); "
+                    f"UI base_goal marker [{marker_mode}] in T0 base: "
+                    f"x={goal_base_x:.3f}, y={goal_base_y:.3f}"
+                )
+
+                # click_xyz (gripper_goal) 과 (goal_base_x, goal_base_y, 0)
+                # (base_goal) 두 점을 base_link → odom 으로 한 번씩 변환해
+                # holder 에 저장. 매 iter publish_feedback 가 현재 TF 로
+                # 재투영해 red/lime 마커 픽셀을 갱신한다.
+                def _base_point_to_odom(bx: float, by: float, bz: float):
+                    pose_in_base = PoseStamped()
+                    pose_in_base.header.frame_id = Frame.BASE_LINK.value
+                    pose_in_base.header.stamp = pred_image_msg.header.stamp
+                    pose_in_base.pose.position.x = bx
+                    pose_in_base.pose.position.y = by
+                    pose_in_base.pose.position.z = bz
+                    pose_in_base.pose.orientation.w = 1.0
+                    ok, pose_in_odom = tf2_transform(
+                        self.tf_buffer, pose_in_base, Frame.ODOM.value,
+                        self.tf_timeout,
+                    )
+                    if not ok:
+                        return None
+                    return np.array([
+                        pose_in_odom.pose.position.x,
+                        pose_in_odom.pose.position.y,
+                        pose_in_odom.pose.position.z,
+                    ])
+
+                gripper_in_odom = _base_point_to_odom(cx, cy, 0.0)
+                base_in_odom = _base_point_to_odom(goal_base_x, goal_base_y, 0.0)
+                if gripper_in_odom is None or base_in_odom is None:
+                    self.get_logger().warning(
+                        "Failed to transform gripper/base goal to odom; "
+                        "marker tracking disabled"
+                    )
+                else:
+                    click_xyz_in_odom_holder[0] = gripper_in_odom
+                    base_goal_xyz_in_odom_holder[0] = base_in_odom
+                    self.get_logger().info(
+                        f"gripper_goal_in_odom={gripper_in_odom}, "
+                        f"base_goal_in_odom={base_in_odom}"
+                    )
+            except Exception as e:
+                self.get_logger().error(traceback.format_exc())
+                pred_goal_state["failed"] = True
+                pred_goal_state["error_msg"] = str(e)
+
+        # PRED_GRASP 콜백: 현재 nav 카메라 RGB + DEPTH_REF 기반 pred_depth 로
+        # GR-ConvNet 실행해 grasp 후보(q_out, ang_out, width_out) 산출.
+        # 결과는 output/grconv/ 에 timestamped 이미지로 저장 (테스트용).
+        # GET_FRONTVIEW / GET_TOPVIEW 단계에서 두 번 호출됨.
+        pred_grasp_counter = [0]
+
+        def pred_grasp_callback() -> bool:
+            """nav RGB + pred_depth 로 GR-ConvNet grasp 예측. 성공 시 True,
+            어떤 단계든 실패하면 False 를 반환해 state 가 FAILURE 로 종료
+            되도록 한다."""
+            pred_grasp_counter[0] += 1
+            tag = f"pred_grasp_{pred_grasp_counter[0]}"
+            try:
+                with self.latest_navigation_camera_image_lock:
+                    image_msg = self.latest_navigation_camera_image
+                if image_msg is None:
+                    self.get_logger().error(
+                        f"[{tag}] No nav camera image available"
+                    )
+                    return False
+                nav_image = ros_msg_to_cv2_image(image_msg, self.cv_bridge)
+                # head_tilt=-45° 상태에서 base 가 보이는 nav 이미지 기반
+                # metric depth 예측 (mm uint16).
+                from nrc_web_teleop_helpers.constants import DEPTH_REF as _REF
+                pred_depth = get_pred_depth(nav_image, ref_rcz=_REF)
+                # new_gripper_goal_scaled (현재 nav 카메라 기준 재투영) 을
+                # 중심으로 (400, 400) crop. 경계 밖은 좌우/상하 대칭 padding.
+                scaled_uv: Optional[Tuple[float, float]] = None
+                if click_xyz_in_odom_holder[0] is not None:
+                    scaled_uv = _project_odom_point_to_nav_pixel(
+                        click_xyz_in_odom_holder[0]
+                    )
+                if scaled_uv is None:
+                    scaled_uv = (
+                        marker_state["gripper_goal_u"],
+                        marker_state["gripper_goal_v"],
+                    )
+                H, W = nav_image.shape[:2]
+                CROP = 400
+                HALF = CROP // 2
+                cu = int(round(scaled_uv[0] * W))
+                cv_c = int(round(scaled_uv[1] * H))
+                u0, v0 = cu - HALF, cv_c - HALF
+                u1, v1 = u0 + CROP, v0 + CROP
+                pad_left = max(0, -u0)
+                pad_top = max(0, -v0)
+                pad_right = max(0, u1 - W)
+                pad_bottom = max(0, v1 - H)
+                nav_padded = np.pad(
+                    nav_image,
+                    ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)),
+                    mode="symmetric",
+                )
+                depth_padded = np.pad(
+                    pred_depth,
+                    ((pad_top, pad_bottom), (pad_left, pad_right)),
+                    mode="symmetric",
+                )
+                cu0 = u0 + pad_left
+                cv0 = v0 + pad_top
+                crop_nav_image = nav_padded[cv0:cv0 + CROP, cu0:cu0 + CROP]
+                crop_pred_depth = depth_padded[cv0:cv0 + CROP, cu0:cu0 + CROP]
+                # GR-ConvNet 입력용 정규화 depth (0~1 float).
+                max_v = (
+                    float(crop_pred_depth.max()) if crop_pred_depth.size else 0.0
+                )
+                if max_v <= 0:
+                    self.get_logger().error(
+                        f"[{tag}] Invalid crop_pred_depth (max={max_v})"
+                    )
+                    return False
+                norm_crop_pred_depth = (crop_pred_depth / max_v).astype(np.float32)
+                result = self._run_grconv(norm_crop_pred_depth, crop_nav_image)
+                if result is None:
+                    self.get_logger().error(
+                        f"[{tag}] grconv inference failed"
+                    )
+                    return False
+                q_out, depth_out, ang_out, width_out = result
+                self._save_grconv_outputs(
+                    crop_nav_image, q_out, depth_out, tag=tag,
+                )
+                # 최고 q 위치 로그 (디버깅 / 후속 GRASP 연결 준비).
+                peak_idx = int(np.argmax(q_out))
+                pr, pc = divmod(peak_idx, q_out.shape[1])
+                self.get_logger().info(
+                    f"[{tag}] grconv peak at (r={pr}, c={pc}), "
+                    f"q={int(q_out[pr, pc])}, "
+                    f"ang={float(ang_out[pr, pc]):+.3f} rad, "
+                    f"width={float(width_out[pr, pc]):.2f} px"
+                )
+                return True
+            except Exception:
+                self.get_logger().error(traceback.format_exc())
+                return False
+
+        # GRASP 콜백 (placeholder).
+        def grasp_callback() -> bool:
+            self.get_logger().info("GRASP callback (TODO: implement)")
+            return True
+
+        # 상태 머신.
         states = MoveToActionState.get_states_for_move_gripper_to_point()
-        self.get_logger().info(f"All States: {states}")
-
+        grasp_ready_state_i = next(
+            (i for i, cs in enumerate(states)
+             if MoveToActionState.GRASP_READY in cs),
+            None,
+        )
+        # skip_relocate 시 TRANSLATE_BASE 만 건너뜀. ROTATE_BASE 는 base 가
+        # 클릭점을 향하도록 회전해야 하므로 거리에 무관하게 항상 실행.
+        relocate_states = (
+            MoveToActionState.TRANSLATE_BASE,
+        )
+        rotate_state_i = next(
+            (i for i, cs in enumerate(states)
+             if MoveToActionState.ROTATE_BASE in cs),
+            None,
+        )
+        translate_state_i = next(
+            (i for i, cs in enumerate(states)
+             if MoveToActionState.TRANSLATE_BASE in cs),
+            None,
+        )
         state_i = 0
         rate = self.create_rate(5.0)  # 5 Hz
 
-        # First, get the offset between the depth and color camera frames
-        if self.camera_offset is None:
-            T = self.controller.get_transform(
-                parent_link=Frame.CAMERA_COLOR_FRAME, child_link=Frame.CAMERA_DEPTH_FRAME
-            )
-            self.camera_offset = (T[0, 3], T[1, 3])
-            self.get_logger().debug(f"Camera offset (x, y): {self.camera_offset}")
-
-        if self.pan_offset is None:
-            T = self.controller.get_transform(
-                parent_link=Frame.BASE_LINK, child_link=Frame.HEAD_PAN_LINK
-            )
-            self.pan_offset = (T[0, 3], T[1, 3])
-            self.get_logger().debug(f"Pan offset (x, y): {self.pan_offset}")
-
-        if self.cam_height is None:
-            T = self.controller.get_transform(
-                parent_link=Frame.BASE_LINK, child_link=Frame.CAMERA_COLOR_FRAME
-            )
-            self.cam_height = T[2, 3]
-            self.get_logger().info(f"cam_height: {self.cam_height}")
-
-        # Calculate the goal positions
-        initial_head_joint_states = self.controller.get_head_joint_states()
-        initial_head_pan = initial_head_joint_states[Joint.HEAD_PAN]
-        initial_head_tilt = initial_head_joint_states[Joint.HEAD_TILT]
-
-        target_theta = -1.0 * np.arctan2(raw_scaled_u - 0.5, 0.5) # HFOV 90deg
-        beta = np.pi * (127.0/180.0) # VFOV 127deg
-        focal_length = 0.5 / np.tan(beta/2.0)
-        alpha = -1.0 * np.arctan2(raw_scaled_v - 0.5, focal_length)  # tan(alpha) = (y-0.5) / focal_length
-        tilt_theta = initial_head_tilt  + alpha
-        
-        feedback.new_scaled_u = 0.5
-        feedback.new_scaled_v = focal_length * np.tan(tilt_theta - (initial_head_tilt+alpha)) + 0.5
-        
-        # Head와 ARM을 클릭 좌표 방향으로 향하도록 Base rotation과 head pan 설정
-        goal_positions = {}
-        if initial_head_pan + target_theta < np.pi/2:
-            goal_positions[Joint.BASE_ROTATION] = initial_head_pan + target_theta + np.pi/2
-        else:
-            goal_positions[Joint.BASE_ROTATION] = initial_head_pan + target_theta - 3*np.pi/2
-        goal_positions[Joint.HEAD_PAN] = -np.pi/2 # 그리퍼 방향
-        goal_positions[Joint.HEAD_TILT] = tilt_theta
-
-        goal_positions[Joint.ARM_LIFT] = None
-        goal_positions[Joint.ARM_L0] = None
-
-        # Base translation: 클릭 픽셀을 TF로 (T0) base_link 의 3D 점(m)으로
-        # 환산해, 팔이 닿는 위치(= 클릭점에서 DEFAULT_ARM_LENGTH 만큼 base
-        # 쪽) 를 base_origin 의 목표로 설정. odom 으로 변환해 두면
-        # translate_base_to_goal_pose 가 world 기준으로 추종한다 (pregrasp 패턴).
-        try:
-            nav_image_cv = ros_msg_to_cv2_image(image_msg, self.cv_bridge)
-            # IK URDF는 head joints가 fixed라 controller.get_transform 으로는
-            # 실 head_tilt/head_pan 반영이 안 된다. 실 TF 트리 조회 사용.
-            # stamp = 이미지 헤더 시점 (캡처 순간의 head 자세와 동기화).
-            T_base_from_nav_link = tf_lookup_matrix(
-                self.tf_buffer, Frame.BASE_LINK.value,
-                Frame.NAV_CAM_LINK.value, self.tf_timeout,
-                stamp=image_msg.header.stamp,
-            )
-            if T_base_from_nav_link is None:
-                raise RuntimeError(
-                    "Failed to lookup base_link <- link_head_nav_cam TF"
-                )
-            result = compute_click_point_in_base(
-                nav_image_cv, raw_scaled_u, raw_scaled_v, T_base_from_nav_link,
-            )
-            click_xyz = None if result is None else result[0]
-        except Exception:
-            self.get_logger().error(traceback.format_exc())
-            click_xyz = None
-        if click_xyz is None:
-            self.get_logger().warning(
-                "Failed to compute click point; skipping base translation"
-            )
-            # goal_pose 를 현재 base_link 원점으로 두면 controller 가 즉시 종료.
-            goal_pose.header.frame_id = Frame.BASE_LINK.value
-            goal_pose.header.stamp = image_msg.header.stamp
-            goal_pose.pose.position = Point(x=0.0, y=0.0, z=0.0)
-            goal_pose.pose.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
-        else:
-            cx, cy = float(click_xyz[0]), float(click_xyz[1])
-            d = float(np.hypot(cx, cy))  # m
-            if d == 0.0:
-                self.get_logger().warning("Click point at base origin")
-                arm_frac = 0.0
-            else:
-                arm_frac = (d - DEFAULT_ARM_LENGTH) / d
-            goal_base_x = cx * arm_frac
-            goal_base_y = cy * arm_frac
-            goal_pose.header.frame_id = Frame.BASE_LINK.value
-            goal_pose.header.stamp = image_msg.header.stamp
-            goal_pose.pose.position = Point(x=goal_base_x, y=goal_base_y, z=0.0)
-            goal_pose.pose.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
-            self.get_logger().info(
-                f"##### gripper goal in T0 base: x={goal_base_x:.3f} m, "
-                f"y={goal_base_y:.3f} m (click d={d:.3f} m)"
-            )
-        # T0 base_link → odom (world 고정 frame) 변환. 이후 MOVE_BASE state 가
-        # 매 iteration 현재 base_link 로 다시 변환해 err 를 계산한다.
-        ok, goal_pose_odom = tf2_transform(
-            self.tf_buffer, goal_pose, Frame.ODOM.value, self.tf_timeout,
-        )
-        if ok:
-            goal_pose.header = goal_pose_odom.header
-            goal_pose.pose = goal_pose_odom.pose
-        else:
-            self.get_logger().warning(
-                "Failed to transform goal_pose to odom; using base_link frame"
-            )
-
-        def update_feedback_and_publish_feedback(distance_error: float):
-            nonlocal tilt_theta, beta, focal_length
-            feedback.elapsed_time = (self.get_clock().now() - start_time).to_msg()
-            alpha = np.arctan2(distance_error, self.cam_height) - beta/2
-            feedback.new_scaled_v = 0.5 - focal_length * np.tan(alpha)
-            feedback.new_scaled_u = 0.5
-            # self.get_logger().info(f"##### Feedback: {distance_error}")
-            goal_handle.publish_feedback(feedback)
-
-        def get_depth_of_center_pixel() -> Optional[float]:
-            with self.latest_realsense_depth_lock:
-                depth_msg = self.latest_realsense_depth
-            if depth_msg is None:
-                self.get_logger().error("No depth message received yet")
-                return 0.0
-            depth_image = ros_msg_to_cv2_image(depth_msg, self.cv_bridge)
-            center_depth = depth_image[depth_image.shape[0]//2, depth_image.shape[1]//2]
-            center_depth = center_depth / 1000.0 # Convert from mm to m
-            self.get_logger().info(f"Depth of center pixel: {center_depth} m")
-            
-            return center_depth
-        
-        def get_height_of_center_pixel(theta_tilt = 0.0) -> Optional[float]:
-            with self.latest_realsense_depth_lock:
-                depth_msg = self.latest_realsense_depth
-            if depth_msg is None:
-                self.get_logger().error("No depth message received yet")
-                return 0.0
-            depth_image = ros_msg_to_cv2_image(depth_msg, self.cv_bridge)
-            center_depth = depth_image[depth_image.shape[0]//2, depth_image.shape[1]//2]
-            center_depth = center_depth / 1000.0 # Convert from mm to m
-            center_height = self.cam_height + center_depth* np.tan(tilt_theta)
-            self.get_logger().info(f"Center Depth: {center_depth} m, Height of center pixel: {center_height} m")
-
-            return center_height
-
-        # Loop
         while rclpy.ok():
             concurrent_states = states[state_i]
-            # self.get_logger().info(
-            #     f"Executing States: {concurrent_states}", throttle_duration_sec=1.0
-            # )
-            # Check if a cancel has been requested   
+
             if goal_handle.is_cancel_requested:
                 return action_cancel_callback("Goal canceled")
-            # Check if the action has timed out
             if (self.get_clock().now() - start_time) > self.action_timeout:
-                return action_error_callback("Goal timed out", MoveGripperToPoint.Result.STATUS_TIMEOUT)
+                return action_error_callback(
+                    "Goal timed out", MoveGripperToPoint.Result.STATUS_TIMEOUT
+                )
 
-            # Move the robot
             if len(motion_executors) == 0:
+                # RELOCATE_BASE skip (PRED_GOAL 에서 결정).
+                if pred_goal_state["skip_relocate"] and any(
+                    s in relocate_states for s in concurrent_states
+                ):
+                    self.get_logger().info(
+                        f"Skipping state {state_i}: {concurrent_states} "
+                        f"(RELOCATE_BASE skipped)"
+                    )
+                    state_i += 1
+                    rate.sleep()
+                    continue
+                # ROTATE_BASE 진입: 모든 마커 숨김 (회전 중 시각적 혼란 방지).
+                if state_i == rotate_state_i:
+                    marker_state["show_click"] = False
+                    marker_state["show_gripper_goal"] = False
+                    marker_state["show_base_goal"] = False
+                    publish_feedback()
+                # TRANSLATE_BASE 진입: gripper_goal (red '+') 과 base_goal
+                # (lime '+') 표시 시작. 매 iter publish_feedback 가 현재 TF 로
+                # 두 마커 픽셀 모두 갱신.
+                if state_i == translate_state_i:
+                    marker_state["show_gripper_goal"] = (
+                        click_xyz_in_odom_holder[0] is not None
+                    )
+                    marker_state["show_base_goal"] = (
+                        base_goal_xyz_in_odom_holder[0] is not None
+                    )
+                    self.get_logger().info(
+                        f"TRANSLATE_BASE entry: show_gripper_goal="
+                        f"{marker_state['show_gripper_goal']}, "
+                        f"show_base_goal={marker_state['show_base_goal']}"
+                    )
+                    publish_feedback()
+                # GRASP_READY 진입: head_pan 을 그리퍼 방향(-π/2) 으로 갱신.
+                # (base 는 GRASP_READY state 내부에서 +π/2 delta 회전한다.)
+                # TRANSLATE_BASE 완료 시점이므로 두 동적 마커 숨김.
+                if state_i == grasp_ready_state_i:
+                    goal_positions[Joint.HEAD_PAN] = -np.pi / 2.0
+                    marker_state["show_gripper_goal"] = False
+                    marker_state["show_base_goal"] = False
+                    publish_feedback()
                 for state in concurrent_states:
                     motion_executor = state.get_motion_executor(
                         controller=self.controller,
@@ -586,13 +880,21 @@ class MoveGripperToPointNode(Node):
                             return_secs=True,
                         ),
                         check_cancel=lambda: terminate_motion_executors,
-                        err_callback=[update_feedback_and_publish_feedback, get_height_of_center_pixel, get_depth_of_center_pixel],
-                        success_callback=[publish_update_goal_point_feedback],
+                        err_callback=[publish_feedback],
+                        success_callback=[
+                            compute_pred_goal,
+                            pred_grasp_callback,
+                            grasp_callback,
+                        ],
                     )
                     if motion_executor is None:
                         return action_success_callback("Goal succeeded")
                     motion_executors.append(motion_executor)
-            # Check if the robot is done moving
+                if pred_goal_state["failed"]:
+                    return action_error_callback(
+                        f"PRED_GOAL failed: {pred_goal_state['error_msg']}",
+                        MoveGripperToPoint.Result.STATUS_DEPROJECTION_FAILURE,
+                    )
             else:
                 try:
                     for i, motion_executor in enumerate(motion_executors):
@@ -600,32 +902,121 @@ class MoveGripperToPointNode(Node):
                         if retval == MotionGeneratorRetval.SUCCESS:
                             motion_executors.pop(i)
                             self.get_logger().info(
-                                f"##### Success (State Num {state_i}:{concurrent_states}"
+                                f"##### Success (State Num {state_i}: {concurrent_states})"
                             )
                             break
                         elif retval == MotionGeneratorRetval.FAILURE:
                             raise Exception("Failed to move to goal pose")
-                        else:  # CONTINUE
-                            pass
                     if len(motion_executors) == 0:
                         state_i += 1
                 except Exception as e:
                     self.get_logger().error(traceback.format_exc())
                     return action_error_callback(
-                            f"Error executing the motion generator: {e}",
+                        f"Error executing the motion generator: {e}",
                         MoveGripperToPoint.Result.STATUS_FAILURE,
                     )
 
-            # Sleep
             rate.sleep()
-        
-        # Failed to execute MoveGripperToPoint
+
         return action_error_callback("Failed to execute MoveGripperToPoint")
 
     def get_optimal_grasp(self):
         # Navigation Cam image
         # GR conv
         return
+
+    def _run_grconv(
+        self, depth_image: np.ndarray, rgb_image: Optional[np.ndarray]
+    ) -> Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
+        """Depth(+RGB) 를 GR-ConvNet 에 입력해 (q_out, depth_out, ang_out,
+        width_out) 를 원본 이미지 크기로 반환. 실패 시 None.
+
+        - depth_image: float32, 정규화된 depth (0~1 권장).
+        - rgb_image: BGR uint8 (HxWx3) 또는 None (depth-only 모델일 때).
+        """
+        if self.grconv_model is None:
+            self.get_logger().warning(
+                "GR-ConvNet model is not loaded; skip grconv inference"
+            )
+            return None
+        try:
+            input_channels = self.grconv_model.conv1.in_channels
+            depth_proc = np.clip(
+                depth_image.astype(np.float32) - depth_image.mean(), -1, 1
+            )
+            if input_channels >= 4 and rgb_image is not None:
+                rgb_proc = rgb_image.astype(np.float32) / 255.0
+                rgb_proc -= rgb_proc.mean()
+                rgb_channels = rgb_proc.transpose((2, 0, 1))
+                x = np.concatenate(
+                    [depth_proc[np.newaxis, :, :], rgb_channels], axis=0
+                )
+            else:
+                x = depth_proc[np.newaxis, :, :]
+            x = torch.from_numpy(
+                x[np.newaxis, :, :, :].astype(np.float32)
+            ).to(self.grconv_device)
+            with torch.no_grad():
+                pred = self.grconv_model.predict(x)
+            q_img, ang_img, width_img = post_process_output(
+                pred["pos"], pred["cos"], pred["sin"], pred["width"]
+            )
+            image_size = (depth_image.shape[1], depth_image.shape[0])
+            q_img = (q_img - q_img.min()) / (q_img.max() - q_img.min() + 1e-8)
+            q_out = cv2.resize(
+                (255.0 * np.clip(q_img, 0.0, 1.0)).astype(np.uint8),
+                image_size, cv2.INTER_AREA,
+            )
+            ang_out = cv2.resize(
+                ang_img.astype(np.float32), image_size, cv2.INTER_LINEAR
+            )
+            width_out = cv2.resize(
+                width_img.astype(np.float32), image_size, cv2.INTER_LINEAR
+            )
+            depth_vis = (depth_image - depth_image.min()) / (
+                depth_image.max() - depth_image.min() + 1e-8
+            )
+            depth_out = (255.0 * np.clip(depth_vis, 0.0, 1.0)).astype(np.uint8)
+            return q_out, depth_out, ang_out, width_out
+        except Exception:
+            self.get_logger().error(traceback.format_exc())
+            return None
+
+    def _save_grconv_outputs(
+        self,
+        rgb_image: np.ndarray,
+        q_out: np.ndarray,
+        depth_out: np.ndarray,
+        tag: str = "",
+    ) -> None:
+        """grconv 결과를 rgb / overlay / depth_out 3장만 저장."""
+        try:
+            os.makedirs(GRCONV_OUTPUT_DIR, exist_ok=True)
+            ts = time.strftime("%Y%m%d_%H%M%S")
+            prefix = f"{ts}_{tag}" if tag else ts
+            cv2.imwrite(
+                os.path.join(GRCONV_OUTPUT_DIR, f"{prefix}_rgb.png"),
+                rgb_image,
+            )
+            cv2.imwrite(
+                os.path.join(GRCONV_OUTPUT_DIR, f"{prefix}_depth_out.png"),
+                depth_out,
+            )
+            q_color = cv2.applyColorMap(q_out, cv2.COLORMAP_JET)
+            if q_color.shape[:2] != rgb_image.shape[:2]:
+                q_color = cv2.resize(
+                    q_color, (rgb_image.shape[1], rgb_image.shape[0])
+                )
+            overlay = cv2.addWeighted(rgb_image, 0.5, q_color, 0.5, 0)
+            cv2.imwrite(
+                os.path.join(GRCONV_OUTPUT_DIR, f"{prefix}_overlay.png"),
+                overlay,
+            )
+            self.get_logger().info(
+                f"GR-ConvNet outputs saved to {GRCONV_OUTPUT_DIR}/{prefix}_*.png"
+            )
+        except Exception:
+            self.get_logger().error(traceback.format_exc())
 
     def save_images(self, save_gripper: bool = False, grip_pred: bool = False):
         # D435 30 cm 이상부터 측정 가능. 최대 3 m

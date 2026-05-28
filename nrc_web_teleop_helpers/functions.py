@@ -118,6 +118,50 @@ def compute_click_point_in_base(
     return p_base[:3].astype(np.float64), z
 
 
+# base_link 의 3D 점(m) 을 nav 이미지의 정규화 픽셀로 역투영
+def project_base_point_to_nav_pixel(
+    point_in_base: np.ndarray,
+    T_nav_link_from_base: np.ndarray,
+) -> Optional[Tuple[float, float]]:
+    """
+    base_link 프레임의 3D 점(m) 을 nav 카메라 이미지의 정규화 픽셀로 변환.
+    `compute_click_point_in_base` 의 역과정.
+
+    매개변수
+    --------
+    point_in_base : (3,) ndarray
+        base_link 프레임의 3D 점 (m).
+    T_nav_link_from_base : (4, 4) ndarray
+        link_head_nav_cam ← base_link 동차 변환. 호출자가
+        `tf_lookup_matrix(NAV_CAM_LINK, BASE_LINK)` 로 얻거나
+        `inv(T_base_from_nav_link)` 로 계산.
+
+    반환값
+    ------
+    Optional[Tuple[float, float]]
+        (scaled_u, scaled_v). 점이 카메라 뒤(광학 z ≤ 0)면 None.
+    """
+    p_base_h = np.array(
+        [point_in_base[0], point_in_base[1], point_in_base[2], 1.0],
+        dtype=np.float64,
+    )
+    p_link = (T_nav_link_from_base @ p_base_h)[:3]
+    p_optical = NAV_OPTICAL_FROM_LINK @ p_link
+    if p_optical[2] <= 0.0:
+        return None
+    uv, _ = cv2.projectPoints(
+        p_optical.reshape(1, 3),
+        np.zeros(3),
+        np.zeros(3),
+        NAV_CAMERA_K,
+        NAV_CAMERA_D,
+    )
+    return (
+        float(uv[0, 0, 0]) / NAV_IMAGE_WIDTH,
+        float(uv[0, 0, 1]) / NAV_IMAGE_HEIGHT,
+    )
+
+
 # nav 카메라 tilt 변경 후 같은 점이 찍히는 nav_scaled_v 위치 계산
 def nav_scaled_v_after_tilt(
     nav_scaled_u: float,

@@ -20,6 +20,17 @@ uint8 STATUS_JOINTS_IN_COLLISION = 7
 uint8 status
 ---
 # Feedback
-float32 new_scaled_u
-float32 new_scaled_v
+# Click 마커 (사용자 클릭 위치, operator 가 자체 보유). false 면 UI 에서 숨김.
+# 진행 중에는 false.
+bool show_click_marker
+# Gripper goal 마커 (red '+'): goal_pose (= 클릭점, world 고정) 을 현재 nav
+# view 에 투영한 정규화 픽셀. base 가 이동함에 따라 매 iter 갱신.
+float32 new_gripper_goal_scaled_u
+float32 new_gripper_goal_scaled_v
+bool show_gripper_goal_marker
+# Base goal 마커 (lime '+'): base_goal_pose (= base 가 도달할 world 고정점,
+# 클릭점에서 OPTIMAL_DISTANCE 만큼 떨어진 위치) 을 현재 nav view 에 투영.
+float32 new_base_goal_scaled_u
+float32 new_base_goal_scaled_v
+bool show_base_goal_marker
 builtin_interfaces/Duration elapsed_time

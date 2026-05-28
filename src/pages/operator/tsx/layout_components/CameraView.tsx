@@ -95,6 +95,10 @@ export const CameraView = (props: CustomizableComponentProps) => {
     const [stopScaledXY, setStopScaledXY] = React.useState<
         [number, number] | null
     >(null);
+    // TRANSLATE_BASE 진행 중 translation_goal 의 현재 nav view 픽셀 (lime '+').
+    const [translationGoalScaledXY, setTranslationGoalScaledXY] = React.useState<
+        [number, number] | null
+    >(null);
     const definition = React.useMemo(
         () => props.definition as CameraViewDefinition,
         [props.definition]
@@ -107,6 +111,7 @@ export const CameraView = (props: CustomizableComponentProps) => {
         setSelectLocationScaledXY(null);
         setPredictedDistance(null);
         setStopScaledXY(null);
+        setTranslationGoalScaledXY(null);
     }
     underVideoFunctionProvider.setMoveBaseToPointOperatorCallbackSub(
         moveBaseToPointStateCallback
@@ -119,6 +124,7 @@ export const CameraView = (props: CustomizableComponentProps) => {
         setSelectLocationScaledXY(null);
         setPredictedDistance(null);
         setStopScaledXY(null);
+        setTranslationGoalScaledXY(null);
     }
     underVideoFunctionProvider.setMoveGripperToPointOperatorCallbakcSub(
         moveGripperToPointStateCallback
@@ -156,6 +162,10 @@ export const CameraView = (props: CustomizableComponentProps) => {
             // (B) 액션 피드백이 stop 마커 위치/표시여부를 갱신.
             underVideoFunctionProvider.setStopScaledXYCallback(
                 setStopScaledXY
+            );
+            // MoveGripper TRANSLATE_BASE 진행 중 base_goal lime '+' 마커 갱신.
+            underVideoFunctionProvider.setTranslationGoalScaledXYCallback(
+                setTranslationGoalScaledXY
             );
             // distance 결과 수신 콜백 설정
             underVideoFunctionProvider.setDistanceResultCallback(
@@ -504,6 +514,19 @@ export const CameraView = (props: CustomizableComponentProps) => {
                         left: (stopScaledXY[0] * 100).toString() + "%",
                         top: (stopScaledXY[1] * 100).toString() + "%",
                         color: "red",
+                        transform: "translateX(-50%) translateY(-50%)",
+                    }}
+                />
+            ) : undefined}
+            {translationGoalScaledXY ? (
+                <AddIcon
+                    style={{
+                        position: "absolute",
+                        left:
+                            (translationGoalScaledXY[0] * 100).toString() + "%",
+                        top:
+                            (translationGoalScaledXY[1] * 100).toString() + "%",
+                        color: "lime",
                         transform: "translateX(-50%) translateY(-50%)",
                     }}
                 />
@@ -1211,12 +1234,6 @@ const UnderRealsenseButtons = (props: {
     const [rerender, setRerender] = React.useState<boolean>(false);
     const [selectedIdx, setSelectedIdx] = React.useState<number>();
     // const [markers, setMarkers] = React.useState<string[]>(['light_switch'])
-
-    console.log(
-        "UnderRealsenseButtons",
-        props.isMovingToPregrasp,
-        props.isShowingTablet
-    );
 
     // Only show MoveToPregrasp buttons if the robot has a Dex wrist with a gripper
     let moveToPregraspButtons = <></>;
